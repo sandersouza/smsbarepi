@@ -1,0 +1,28 @@
+#---KERNEL START---
+kernel=sms.img
+initramfs sms.cpio followkernel
+#---KERNEL END---
+
+#---HDMI START---
+hdmi_group=1
+hdmi_mode=4
+framebuffer_width=1280
+framebuffer_height=720
+#---HDMI END---
+
+# Boot config
+enable_uart=1
+enable_tvout=1
+disable_splash=1
+disable_overscan=1
+hdmi_force_hotplug=1
+
+# Disable WIFI + BT
+dtoverlay=disable-wifi
+dtoverlay=disable-bt
+dtoverlay=pi3-disable-bt
+
+# Force CPU Freq
+arm_64bit=1
+arm_freq=1200
+arm_freq_min=1150

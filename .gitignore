@@ -1,0 +1,41 @@
+# .gitignore for CoCoBarePI Circle project
+build/
+artifacts/
+third_party/*/
+.config
+.config.mk
+
+# Ignore ROM files and SD card contents, which are not part of the source code and may contain large binary files.
+roms/*.rom
+roms/*.ROM
+roms/machines/*/
+roms/games/*/*
+
+# Ignore SD card contents, which may contain large binary files and are not part of the source code.
+sdcard/coco/disks/*
+sdcard/coco/roms/*
+sdcard/coco/vhd/*
+sdcard/disks/*
+sdcard/roms/*
+sdcard/msx.cpio
+sdcard/coco.cpio
+
+# Ignore macOS metadata files, which are not relevant to the project and can clutter the repository.
+.DS_Store
+.config*
+.tmp*
+__pycache__/
+*.log
+*.bak
+
+# Ignore reverse engineering artifacts, which may contain sensitive information and are not part of the source code.
+docs/reverse-engineering/*/
+!docs/reverse-engineering/msxdiag/
+!docs/reverse-engineering/msxdiag/**
+!docs/reverse-engineering/msx2plus/
+!docs/reverse-engineering/msx2plus/**
+!docs/reverse-engineering/issues/
+!docs/reverse-engineering/issues/issue-82/
+!docs/reverse-engineering/issues/issue-82/**
+!docs/reverse-engineering/issues/issue-188/
+!docs/reverse-engineering/issues/issue-188/**

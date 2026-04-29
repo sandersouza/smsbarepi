@@ -1,0 +1,13 @@
+#ifndef SMSBARE_CIRCLE_SMSBARE_CXX_CMATH_SHIM
+#define SMSBARE_CIRCLE_SMSBARE_CXX_CMATH_SHIM
+
+#include <math.h>
+
+namespace std
+{
+using ::log;
+using ::pow;
+using ::sin;
+} /* namespace std */
+
+#endif /* SMSBARE_CIRCLE_SMSBARE_CXX_CMATH_SHIM */

@@ -1,0 +1,32 @@
+#ifndef SMSBARE_CIRCLE_SMSBARE_CXX_STRING_SHIM
+#define SMSBARE_CIRCLE_SMSBARE_CXX_STRING_SHIM
+
+namespace std
+{
+class string
+{
+public:
+    string(void) : data_("") {}
+    string(const char *data) : data_(data ? data : "") {}
+    string(const string &other) : data_(other.data_) {}
+
+    string &operator=(const string &other)
+    {
+        if (this != &other)
+        {
+            data_ = other.data_;
+        }
+        return *this;
+    }
+
+    const char *c_str(void) const
+    {
+        return data_;
+    }
+
+private:
+    const char *data_;
+};
+} /* namespace std */
+
+#endif /* SMSBARE_CIRCLE_SMSBARE_CXX_STRING_SHIM */

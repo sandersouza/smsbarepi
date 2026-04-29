@@ -1,0 +1,3 @@
+sounddev=sndvchiq
+fast=true
+socmaxtemp=75

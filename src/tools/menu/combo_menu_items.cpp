@@ -2,14 +2,8 @@
 #include "combo_locale.h"
 #include "backend/runtime/runtime.h"
 
-#ifndef SMSBARE_ONE_ROM_MODE
-#define SMSBARE_ONE_ROM_MODE 0
-#endif
-#ifndef SMSBARE_BOOT_MODE_LOCKED
-#define SMSBARE_BOOT_MODE_LOCKED 0
-#endif
-#ifndef SMSBARE_PATREON_TAG
-#define SMSBARE_PATREON_TAG ""
+#ifndef SMSBARE_BUILD_OWNER
+#define SMSBARE_BUILD_OWNER ""
 #endif
 #ifndef SMSBARE_ENABLE_DEBUG_OVERLAY
 #define SMSBARE_ENABLE_DEBUG_OVERLAY 0
@@ -172,10 +166,10 @@ const TComboMenuItem *combo_menu_root_items_get(unsigned language, unsigned boot
     ADD_ROOT_ITEM("", ComboMenuActionSeparator, FALSE);
     (void) boot_mode;
     ADD_ROOT_ITEM(locale->root_hard_reset, ComboMenuActionHardReset, TRUE);
-    BuildPatreonLabel(patreon_label, sizeof(patreon_label), locale->root_patreon_prefix, SMSBARE_PATREON_TAG);
+    BuildPatreonLabel(patreon_label, sizeof(patreon_label), locale->root_patreon_prefix, SMSBARE_BUILD_OWNER);
     if (patreon_label[0] != '\0')
     {
-        BuildPatreonLabel(patreon_tag_line, sizeof(patreon_tag_line), "", SMSBARE_PATREON_TAG);
+        BuildPatreonLabel(patreon_tag_line, sizeof(patreon_tag_line), "", SMSBARE_BUILD_OWNER);
         ADD_ROOT_ITEM("", ComboMenuActionNone, FALSE);
         ADD_ROOT_ITEM(locale->root_patreon_prefix, ComboMenuActionNone, FALSE);
         ADD_ROOT_ITEM(patreon_tag_line, ComboMenuActionNone, FALSE);

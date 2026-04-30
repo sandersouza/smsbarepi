@@ -1,36 +1,25 @@
 ---
-description: "Use quando criar ou alterar labels visiveis ao usuario em menus, overlays e file browser. Garante localizacao PT/EN/ES e evita strings hardcoded fora do sistema de locale."
-name: "SMSBarePI Localization Guardrails"
+description: "Use para strings visiveis em locale, menu, debug e file browser."
+name: "Localization"
 applyTo:
-  - "src/combo_locale*.cpp"
-  - "src/combo_locale*.h"
-  - "src/combo_menu*.cpp"
-  - "src/combo_menu*.h"
-  - "src/combo_debug_overlay*.cpp"
-  - "src/combo_debug_overlay*.h"
-  - "src/combo_file_browser*.cpp"
-  - "src/combo_file_browser*.h"
+  - "src/tools/locale/**"
+  - "src/tools/menu/**"
+  - "src/tools/debug/**"
+  - "src/tools/file_browser/**"
   - "docs/debug-layer.md"
+  - "docs/file-browser-component.md"
 ---
-# SMSBarePI Localization Guardrails
-
-## Objetivo
-
-- Garantir consistencia de strings visiveis ao usuario entre idiomas suportados (`PT`, `EN`, `ES`).
+# Localization
 
 ## Regras
 
-- Toda nova string visivel ao usuario deve entrar no sistema de locale; evitar hardcode fora das tabelas de traducao.
-- Ao criar/alterar labels de menu, submenu, campos, slots e estados (ex.: `[ EMPTY ]`), atualizar `PT`, `EN` e `ES` na mesma mudanca.
-- Manter nomes de chaves de locale estaveis e sem duplicacao semantica.
-- Preservar tom curto e claro para texto de UI em todos os idiomas.
+- Toda nova string visivel deve entrar no sistema de locale.
+- Atualizar PT, EN e ES na mesma mudanca.
+- Evitar hardcode fora das tabelas de traducao.
+- Manter chaves estaveis e sem duplicacao semantica.
+- Usar texto curto e claro em todos os idiomas.
 
-## Areas sensiveis
+## Validacao
 
-- Mudancas em menu/overlay/file browser devem revisar impacto em texto exibido.
-- Se a alteracao mudar hotkeys, labels ou campos de debug, atualizar `docs/debug-layer.md` junto.
-
-## Validacao minima
-
-- Confirmar que os tres idiomas carregam sem fallback inesperado.
-- Verificar rapidamente no fluxo de UI afetado se nenhuma string ficou faltando ou truncada.
+- Confirmar que PT/EN/ES carregam sem fallback inesperado.
+- Verificar no fluxo afetado se nenhuma string ficou faltando, truncada ou desalinhada.

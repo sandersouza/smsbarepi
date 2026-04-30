@@ -4,7 +4,7 @@ Data: 2026-04-26
 
 ## Estado
 
-- Workspace ainda sem repositorio Git local.
+- Workspace com repositorio Git local na branch `main`.
 - Porta inicial do SMS Plus GX criada em `src/backend/sms/`.
 - Backend integrado ao registry BarePI como `sms.smsplus`.
 - Build local passa com `DEBUG=1` no corte SMS-only.
@@ -27,24 +27,24 @@ Data: 2026-04-26
 - O fluxo de `CORE` persiste somente o bloco `#---KERNEL START---`/`#---KERNEL END---` do `config.txt`; sem esses marcadores, a troca de core falha sem regravar o arquivo.
 - O menu `Settings -> CORE` enumera somente `*.img` presentes em `SD:/`; o fallback interno de kernel e `sms`, nao o id de backend `smsplus`.
 - Ao sair de Settings, o kernel executa `HandleSettingsMenuClosed()` e agenda `SaveSettingsToStorage()`. Se `CORE` mudou, o mesmo fechamento tambem persiste `SD:/config.txt` e agenda reboot. Sair direto do pause menu com Settings ativo continua usando o mesmo fechamento.
+- A mecanica `make menuconfig`/Kconfig foi removida do build SMS-only. O `Makefile` nao le `.config`, nao gera `build/config_build.h`, e o kernel nao usa flags de boot mode/feature enable vindas de Kconfig; o boot mode SMS permanece fixo em `NORM`. As opcoes de build restantes sao flags diretas como `DEBUG=0|1` e `OWNER=<nome>`.
 
 ## Validacao
 
 ```sh
-make guard-third-party
-NON_INTERACTIVE=1 make syncconfig
-make
-make backend-module
-make initramfs
+scripts/check-third-party-pristine.sh
+bash -n scripts/install-toolchains.sh scripts/make-initramfs.sh scripts/build-config.sh scripts/prepare-sd.sh scripts/update-sd-incremental.sh scripts/make-sdcard-package.sh scripts/check-third-party-pristine.sh scripts/check-toolchain.sh scripts/logserial.sh scripts/perf-regression.sh
+make -j4 DEBUG=1
+make -j4 DEBUG=0
+make -n sdcard
 ```
 
 Resultado atual:
 
 - `artifacts/kernel8-default.img`
 - `build/src/sms.img`
-- Ultima build local: `BUILD_BID=202604282046-nogit`, `TXTDBG BUILD:8F47`, SHA1 `9527c5249ceb1ce6899476474b2c685cc86b9b10` (`DEBUG=1`).
-- Modulo loadable SMS: `artifacts/backend/sms/sms.smsplus.mod.elf`, SHA1 `ac57ea898783622dcd3c919cfa26a5418ccd8b5c`.
-- Initramfs: `sdcard/sms.cpio`, SHA1 `65282a867fc7173f018c072bb4e5f46ed65758be`.
+- `artifacts/kernel8-sms-cleanup.img`
+- Ultima build local: `BUILD_BID=202604291752-090c2b1`, `TXTDBG BUILD:6824`, SHA1 `cb95ec86d3d30d9af6a8965dfad362a64655ff58` (`DEBUG=0`).
 
 ## Pendencias
 

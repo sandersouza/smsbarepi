@@ -1,6 +1,6 @@
 ---
-description: "Use para regras de gestao de issues/milestones/branches/PRs e sincronizacao do espelho local em docs/milestones e docs/issues."
-name: "SMSBarePI Project Management"
+description: "Use para gestao de issues, milestones, branches, PRs, board e espelho local em docs/milestones e docs/issues."
+name: "Project Management"
 applyTo:
   - "docs/github-project-management.md"
   - "docs/milestones/**"
@@ -9,60 +9,43 @@ applyTo:
   - "CONTEXT.md"
   - "docs/handoff/**"
 ---
-# SMSBarePI Project Management
+# Project Management
 
-## Objetivo
+## Fonte e ferramentas
 
-- Manter fluxo previsivel de trabalho entre issues, branches, PRs e milestones.
+- Seguir `docs/github-project-management.md` como fonte de verdade do fluxo.
+- Para tarefas GitHub, tentar primeiro o GitHub MCP.
+- Usar `gh` CLI somente se o MCP nao tiver funcao aplicavel ou falhar.
+- Ao usar `gh`, evitar textos grandes inline; usar o `.md` do espelho local como fonte.
 
-## Fonte de verdade
+## Issues, milestones e board
 
-- Seguir `docs/github-project-management.md` como referencia principal de processo.
-- Este arquivo define guardrails compactos; comandos detalhados/checklists operacionais ficam no documento de gestao.
+- Toda issue deve ter milestone.
+- Se nao houver milestone adequada, usar ou criar `FIX: Minor Issues / Other Issues`; ela e permanente e nao deve ser apagada.
+- Issue nova entra em `Backlog`; mover no board conforme o fluxo: `Ready`, `In progress`, `In review`, `Done`.
+- Ao ativar uma milestone, mover issues abertas da milestone para `Ready` e manter apenas a ativa em `In progress`.
+- Toda issue deve registrar DoR e DoD; checklist operacional nao substitui criterio de aceite.
 
-## Ferramentas GitHub
+## Branches e PRs
 
-- Preferir **GitHub MCP** para operacoes de gestao (issues, PRs, projeto, milestones) sempre que estiver disponivel/funcional.
-- Usar **`gh` CLI apenas como fallback** quando MCP estiver indisponivel, com erro de autenticacao/permissao, ou sem suporte para a operacao desejada.
-- Evitar comandos longos inline no terminal para criar issues; preparar um `.md` local e usá-lo como fonte da issue remota.
+- Branch de issue deve estar vinculada a issue de origem.
+- Sub-issue de umbrella/epic deve derivar da branch umbrella e abrir PR contra ela; a umbrella abre PR para `main` ao consolidar.
+- Branch de release usa `release/<versao>`.
+- Nao reescrever historico da `main`.
+- Nao remover branch local sem confirmar com o usuario.
+- Garantir labels coerentes entre issue e PR.
 
-## Branches
+## Estabilidade, commit e sincronizacao
 
-- Branch de issue deve ser vinculada a issue de origem.
-- Quando uma issue atuar como umbrella/epic com branch propria, cada sub-issue operacional deve nascer em branch derivada da branch umbrella, e nao diretamente de `main`.
-- Nessa topologia, a branch da sub-issue deve abrir PR para a branch umbrella; a branch umbrella so abre PR para `main` ao consolidar a trilha.
-- Branch de release deve seguir padrao `release/<versao>`.
-- Nunca reescrever historico da `main`.
-- Nem `git commit` local nem `git push` devem acontecer durante iteracoes experimentais da issue; ambos so sao permitidos quando o usuario declarar explicitamente que o estado atual da issue esta estavel.
-- Nao publicar nem consolidar cortes intermediarios apenas para backup/sincronizacao; manter iteracoes experimentais somente no worktree ate confirmacao do usuario.
-- Se um commit local for feito por engano antes da estabilidade da issue, desfazer imediatamente esse commit de volta ao worktree antes de continuar.
-- Antes de remover branch local, confirmar com o usuario.
+- `git commit` e `git push` so podem ocorrer quando o usuario declarar a issue estavel.
+- Se um commit local for feito por engano antes da estabilidade, desfazer o commit de volta ao worktree.
+- Quando o usuario disser apenas `estavel`, abrir o PR da branch correta e aguardar review.
+- Quando o usuario disser `mergeado` apos o PR, sincronizar remotos/locais e voltar para a branch correta: umbrella ativa ou `main`.
 
-## Ciclo de issue/board
+## Espelho local
 
-- Issue recem-criada deve entrar em `Backlog`, nao em `Ready`.
-- Atualizar status de item no projeto: `In progress` -> `In review` -> `Done`.
-- Se testes falharem, voltar item para `In progress`.
-- Ao concluir issue, mover item para `Done` no mesmo ciclo.
-- Ao ativar milestone, preparar board movendo todas as issues abertas da milestone para `Ready` e manter apenas a ativa em `In progress`.
-
-## Definicao de issue
-
-- Toda issue deve nascer com `DoR` (Definition of Ready) e `DoD` (Definition of Done) bem definidos; quando ainda houver descoberta pendente, registrar `DoR/DoD` como sugestao inicial.
-- Checklist operacional nao substitui `DoR/DoD`; ambos devem deixar claro prerequisitos, escopo de entrega e criterio de aceite.
-
-## PRs
-
-- Ao concluir issue estavel sem umbrella ativa, abrir PR da branch da issue para `main`.
-- Ao concluir sub-issue que esteja trabalhando sob uma umbrella branch ativa, abrir PR da branch da sub-issue para a branch umbrella correspondente.
-- Enviar link do PR para aprovacao/review antes de seguir para proxima issue.
-- Garantir labels coerentes entre issue e PR (prioridade/tipo/area/beta).
-
-## Espelho local de milestones/issues
-
-- Manter `docs/milestones/` e `docs/issues/` sincronizados com remoto.
-- Criar primeiro o espelho local da milestone/issue e so depois subir a milestone/issue remota ao GitHub.
-- Cada milestone remota deve ter pasta local com `README.md` e campo `Milestone remota: #<numero>`.
-- Cada pasta de milestone deve conter `CHALLENGES.md` com desafios/solucao/encaminhamento por issue.
-- Cada issue vinculada a milestone deve ficar em `docs/milestones/m<numero>/<numero>-<slug>.md`, inclusive fechadas para historico.
-- Cada issue avulsa/standalone sem milestone deve ficar em `docs/issues/<numero>-<slug>.md`, inclusive fechadas para historico.
+- Manter `docs/milestones/` e `docs/issues/` sincronizados com o remoto.
+- Criar o espelho local antes da milestone/issue remota.
+- Milestone local: `docs/milestones/m<numero>/README.md` com `Milestone remota: #<numero>` e `CHALLENGES.md`.
+- Issue de milestone: `docs/milestones/m<numero>/<numero>-<slug>.md`.
+- Issue standalone: `docs/issues/<numero>-<slug>.md`.

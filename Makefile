@@ -8,8 +8,6 @@ FB_HEIGHT ?= 768
 DEBUG := 1
 SMSBARE_SIZE_OPT ?= 1
 OWNER ?=
-SMSBARE_PATREON_TAG ?=
-SMSBARE_BOOT_MODE_DEFAULT ?= NORM
 SMSBARE_EMBED_INITRAMFS ?= 0
 FIRMWARE_DIR ?= ./rpi-firmware
 BUILD_BID ?= $(shell date +%Y%m%d%H%M)-$(shell git rev-parse --short HEAD 2>/dev/null || echo nogit)
@@ -17,36 +15,12 @@ CIRCLE_KERNEL_MAX_SIZE ?= 0x500000
 CIRCLE_EXTRAINCLUDE ?= -DKERNEL_MAX_SIZE=$(CIRCLE_KERNEL_MAX_SIZE)
 FATFS_COMPAT_INCLUDE := -I$(CURDIR)/src/fatfs_compat
 
--include .config.mk
--include $(BUILD_DIR)/config.mk
-
 DEBUG_BOOL := 0
 ifeq ($(strip $(DEBUG)),1)
 DEBUG_BOOL := 1
 endif
 
 EFFECTIVE_OWNER := $(strip $(OWNER))
-ifeq ($(EFFECTIVE_OWNER),)
-EFFECTIVE_OWNER := $(strip $(SMSBARE_PATREON_TAG))
-endif
-
-SMSBARE_BOOT_MODE_DEFAULT_ENUM := 0
-SMSBARE_BOOT_MODE_LOCKED := 0
-ifeq ($(SMSBARE_BOOT_MODE_DEFAULT),NONE)
-SMSBARE_BOOT_MODE_DEFAULT_ENUM := 0
-SMSBARE_BOOT_MODE_LOCKED := 0
-else ifeq ($(SMSBARE_BOOT_MODE_DEFAULT),FAST)
-SMSBARE_BOOT_MODE_DEFAULT_ENUM := 1
-SMSBARE_BOOT_MODE_LOCKED := 1
-else ifeq ($(SMSBARE_BOOT_MODE_DEFAULT),GAME)
-SMSBARE_BOOT_MODE_DEFAULT_ENUM := 2
-SMSBARE_BOOT_MODE_LOCKED := 1
-else ifeq ($(SMSBARE_BOOT_MODE_DEFAULT),NORM)
-SMSBARE_BOOT_MODE_DEFAULT_ENUM := 0
-SMSBARE_BOOT_MODE_LOCKED := 1
-else ifneq ($(SMSBARE_BOOT_MODE_DEFAULT),NORM)
-$(error SMSBARE_BOOT_MODE_DEFAULT invalido: $(SMSBARE_BOOT_MODE_DEFAULT). Use NONE, NORM, FAST ou GAME)
-endif
 
 CROSS ?= $(shell \
 	if command -v aarch64-none-elf-gcc >/dev/null 2>&1 && command -v aarch64-none-elf-g++ >/dev/null 2>&1; then \
@@ -78,11 +52,11 @@ CIRCLE_MAKE_FLAGS := PREFIX64=$(CROSS)
 CIRCLE_CONFIG_STAMP := $(BUILD_DIR)/circle-build.stamp
 CIRCLE_ASM_COMMAND := AS='$(CROSS)gcc $(CIRCLE_EXTRAINCLUDE)'
 
-.PHONY: all default backend-module clean help guard-third-party circle-configure circle-configure-force circle-libs circle sdcard sdcard-update initramfs embedded-initramfs package menuconfig syncconfig config-header logserial
+.PHONY: all default backend-module clean help guard-third-party circle-configure circle-configure-force circle-libs circle sdcard sdcard-update initramfs embedded-initramfs package logserial
 
 all: default
 
-default: config-header circle-libs
+default: circle-libs
 	@mkdir -p artifacts build/src
 	@if [ "$(SMSBARE_EMBED_INITRAMFS)" = "1" ]; then \
 		$(MAKE) embedded-initramfs INITRAMFS_IN="$(INITRAMFS_IN)" EMBEDDED_INITRAMFS_OUT="$(EMBEDDED_INITRAMFS_OUT)"; \
@@ -96,10 +70,7 @@ default: config-header circle-libs
 		SMSBARE_BUILD_BID="$(BUILD_BID)" \
 		SMSBARE_BUILD_OWNER="$(EFFECTIVE_OWNER)" \
 		SMSBARE_EMBED_INITRAMFS=$(SMSBARE_EMBED_INITRAMFS) \
-		SMSBARE_EMBED_INITRAMFS_PATH="$(abspath $(EMBEDDED_INITRAMFS_OUT))" \
-		SMSBARE_PATREON_TAG="$(EFFECTIVE_OWNER)" \
-		SMSBARE_BOOT_MODE_DEFAULT_ENUM=$(SMSBARE_BOOT_MODE_DEFAULT_ENUM) \
-		SMSBARE_BOOT_MODE_LOCKED=$(SMSBARE_BOOT_MODE_LOCKED)
+		SMSBARE_EMBED_INITRAMFS_PATH="$(abspath $(EMBEDDED_INITRAMFS_OUT))"
 	@img=$$(ls src/kernel8*.img 2>/dev/null | head -n1); \
 	if [ -z "$$img" ]; then \
 		echo "Erro: imagem de bootstrap nao encontrada"; \
@@ -141,7 +112,7 @@ default: config-header circle-libs
 	fi
 	@echo "Artefato default estavel: $(DEFAULT_ARTIFACT)"
 
-backend-module: config-header
+backend-module:
 	@mkdir -p artifacts
 	@if [ "$(SMSBARE_EMBED_INITRAMFS)" = "1" ]; then \
 		$(MAKE) embedded-initramfs INITRAMFS_IN="$(INITRAMFS_IN)" EMBEDDED_INITRAMFS_OUT="$(EMBEDDED_INITRAMFS_OUT)"; \
@@ -155,9 +126,6 @@ backend-module: config-header
 		SMSBARE_BUILD_OWNER="$(EFFECTIVE_OWNER)" \
 		SMSBARE_EMBED_INITRAMFS=$(SMSBARE_EMBED_INITRAMFS) \
 		SMSBARE_EMBED_INITRAMFS_PATH="$(abspath $(EMBEDDED_INITRAMFS_OUT))" \
-		SMSBARE_PATREON_TAG="$(EFFECTIVE_OWNER)" \
-		SMSBARE_BOOT_MODE_DEFAULT_ENUM=$(SMSBARE_BOOT_MODE_DEFAULT_ENUM) \
-		SMSBARE_BOOT_MODE_LOCKED=$(SMSBARE_BOOT_MODE_LOCKED) \
 		backend-module
 
 guard-third-party:
@@ -237,20 +205,6 @@ circle: circle-configure-force
 	$(MAKE) -C third_party/circle/addon/fatfs $(CIRCLE_MAKE_FLAGS) $(CIRCLE_ASM_COMMAND) CHECK_DEPS=0 EXTRAINCLUDE='$(CIRCLE_EXTRAINCLUDE) $(FATFS_COMPAT_INCLUDE)' >/dev/null
 	@printf '%b\n' 'CROSS=$(CROSS)\nEXTRAINCLUDE=$(CIRCLE_EXTRAINCLUDE)\nAS=$(CROSS)gcc $(CIRCLE_EXTRAINCLUDE)\nFATFS=$(FATFS_COMPAT_INCLUDE)' > "$(CIRCLE_CONFIG_STAMP)"
 	@echo "Circle rebuild concluido."
-
-menuconfig:
-	./scripts/menuconfig.sh
-
-syncconfig:
-	./scripts/menuconfig.sh --sync-only
-
-config-header:
-	@mkdir -p $(BUILD_DIR)
-	SMSBARE_BOOT_MODE_DEFAULT="$(SMSBARE_BOOT_MODE_DEFAULT)" \
-	SMSBARE_BOOT_MODE_DEFAULT_ENUM="$(SMSBARE_BOOT_MODE_DEFAULT_ENUM)" \
-	SMSBARE_BOOT_MODE_LOCKED="$(SMSBARE_BOOT_MODE_LOCKED)" \
-	SMSBARE_PATREON_TAG="$(EFFECTIVE_OWNER)" \
-	./scripts/gen-build-header.sh $(BUILD_DIR)/config_build.h
 
 clean:
 	@if [ -f third_party/circle/Config.mk ]; then \
@@ -347,8 +301,6 @@ help:
 	@echo "Targets: all (default), backend-module, clean, sdcard, sdcard-update, initramfs, package, help, logserial"
 	@echo "Circle: default so gera se faltar algo; rebuild forcado apenas com 'make circle'"
 	@echo "clean: limpa build local, artifacts de kernel e objetos/libs em subdirs do Circle"
-	@echo "Configuracao: make menuconfig (gera .config + build/config.mk)"
-	@echo "Aplicar .config sem UI: make syncconfig"
 	@echo "Default (make): artifacts/kernel8-default.img e build/src/sms.img"
 	@echo "Boot no SD: scripts copiam o kernel selecionado como sms.img"
 	@echo "SD card prep: make sdcard"
@@ -359,11 +311,10 @@ help:
 	@echo "Save/load state: SD:/sms/"
 	@echo "SD package zip (via prepare-sd dry-run offline): make package"
 	@echo "Flags uteis: make package DEBUG=0|1 OWNER=<nome> FIRMWARE_DIR=./rpi-firmware"
-	@echo "Precedencia: flags da linha de comando vencem .config; .config vence os defaults"
 	@echo "Cross prefix auto: aarch64-none-elf- | aarch64-elf- | aarch64-linux-gnu-"
 	@echo "Override: make CROSS=aarch64-elf-"
 	@echo "Use flags principais: DEBUG=0|1 OWNER=<nome> FIRMWARE_DIR=<dir>"
-	@echo "Owner/tag efetivo: OWNER vence; se vazio, usa SMSBARE_PATREON_TAG (menuconfig)"
+	@echo "Owner/tag efetivo: OWNER=<nome>"
 	@echo "Backend fixo: sms.smsplus"
 	@echo "Modulo loadable: make backend-module -> artifacts/backend/sms/sms.smsplus.mod.elf"
 	@echo "Bypass temporario (nao recomendado): ALLOW_DIRTY_THIRD_PARTY=1 make"

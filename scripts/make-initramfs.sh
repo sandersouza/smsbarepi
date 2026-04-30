@@ -9,8 +9,6 @@ fi
 
 IN_DIR="$1"
 OUT_FILE="$2"
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-KCONFIG_FILE="${KCONFIG_FILE:-${PROJECT_ROOT}/.config}"
 
 if [ ! -d "$IN_DIR" ]; then
   echo "[ERRO] Diretorio nao encontrado: $IN_DIR"

@@ -20,12 +20,6 @@ COMMON_TOOLS=(
   shasum
 )
 
-MENUCONFIG_TOOLS=(
-  bison
-  flex
-  pkg-config
-)
-
 TOOLCHAIN_PREFIXES=(
   aarch64-none-elf-
   aarch64-elf-
@@ -121,40 +115,6 @@ print_toolchain_status() {
   fi
 }
 
-menuconfig_ncurses_found() {
-  if ! command -v pkg-config >/dev/null 2>&1; then
-    return 1
-  fi
-  if pkg-config --exists ncursesw >/dev/null 2>&1; then
-    return 0
-  fi
-  if pkg-config --exists ncurses >/dev/null 2>&1; then
-    return 0
-  fi
-  return 1
-}
-
-print_menuconfig_status() {
-  local missing=()
-  collect_missing_tools missing "${MENUCONFIG_TOOLS[@]}"
-
-  echo
-  echo "[Dependencias do menuconfig]"
-  if [ "${#missing[@]}" -eq 0 ] && menuconfig_ncurses_found; then
-    echo "  OK: mconf pronto (bison/flex/pkg-config + ncurses)"
-    return 0
-  fi
-
-  echo "  Faltando:"
-  local item
-  for item in "${missing[@]}"; do
-    [ -n "$item" ] && echo "  - $item"
-  done
-  if ! menuconfig_ncurses_found; then
-    echo "  - biblioteca de desenvolvimento ncurses (pkg-config: ncursesw|ncurses)"
-  fi
-}
-
 linux_install_with_apt() {
   if ! command -v apt-get >/dev/null 2>&1; then
     echo "[ERRO] Linux sem APT detectado. Este script instala apenas com APT."
@@ -170,10 +130,6 @@ linux_install_with_apt() {
     rsync
     fzf
     perl
-    bison
-    flex
-    pkg-config
-    libncurses-dev
   )
 
   local toolchain_pkg_sets=(
@@ -247,10 +203,6 @@ macos_install_with_brew() {
     cpio
     fzf
     perl
-    bison
-    flex
-    pkg-config
-    ncurses
   )
 
   if [ "$DRY_RUN" = "1" ]; then
@@ -301,8 +253,7 @@ suggest_for_unsupported_os() {
   echo "[ERRO] SO nao suportado por este instalador: $os"
   echo "[INFO] Suportado: Linux com APT e macOS com Homebrew."
   echo "[INFO] Em outros SOs, instale manualmente:"
-  echo "  - make git zip cpio rsync fzf perl bison flex pkg-config"
-  echo "  - ncurses (headers + pkg-config)"
+  echo "  - make git zip cpio rsync fzf perl"
   echo "  - toolchain aarch64-none-elf-*"
 }
 
@@ -313,20 +264,17 @@ main() {
   echo "[$SCRIPT_NAME] Verificando ambiente..."
   print_tools_status "Ferramentas gerais" "${COMMON_TOOLS[@]}"
   print_toolchain_status
-  print_menuconfig_status
 
   echo
   echo "[$SCRIPT_NAME] Checando toolchain via script oficial..."
   if run_toolchain_check; then
     local missing_before=()
     collect_missing_tools missing_before "${COMMON_TOOLS[@]}"
-    local missing_menuconfig_before=()
-    collect_missing_tools missing_menuconfig_before "${MENUCONFIG_TOOLS[@]}"
-    if [ "${#missing_before[@]}" -eq 0 ] && [ "${#missing_menuconfig_before[@]}" -eq 0 ] && menuconfig_ncurses_found; then
+    if [ "${#missing_before[@]}" -eq 0 ]; then
       echo "[OK] Ambiente ja estava completo."
       exit 0
     fi
-    echo "[INFO] Toolchain OK, mas faltam ferramentas gerais e/ou dependencias do menuconfig."
+    echo "[INFO] Toolchain OK, mas faltam ferramentas gerais."
   else
     echo "[INFO] Toolchain ausente/incompleta. Tentando instalar..."
   fi
@@ -348,7 +296,6 @@ main() {
   echo "[$SCRIPT_NAME] Revalidando ambiente..."
   print_tools_status "Ferramentas gerais" "${COMMON_TOOLS[@]}"
   print_toolchain_status
-  print_menuconfig_status
 
   echo
   echo "[$SCRIPT_NAME] Rechecando toolchain via script oficial..."
@@ -357,17 +304,13 @@ main() {
   fi
 
   local missing_after=()
-  collect_missing_tools missing_after "${COMMON_TOOLS[@]}" "${MENUCONFIG_TOOLS[@]}"
+  collect_missing_tools missing_after "${COMMON_TOOLS[@]}"
   local toolchain_ok=1
   if ! toolchain_prefix_found >/dev/null 2>&1; then
     toolchain_ok=0
   fi
-  local menuconfig_ok=1
-  if ! menuconfig_ncurses_found; then
-    menuconfig_ok=0
-  fi
 
-  if [ "${#missing_after[@]}" -gt 0 ] || [ "$toolchain_ok" -ne 1 ] || [ "$menuconfig_ok" -ne 1 ]; then
+  if [ "${#missing_after[@]}" -gt 0 ] || [ "$toolchain_ok" -ne 1 ]; then
     echo
     echo "[WARN] Ainda existem ferramentas faltando."
     exit 1

@@ -1763,20 +1763,9 @@ static void FillRectScreen(CComboScreenDevice *screen,
 #define SMSBARE_AUDIO_DISABLE_AUTO_GAIN 1
 #define SMSBARE_AUDIO_DEFAULT_GAIN_PCT 100
 #define SMSBARE_AUDIO_DEFAULT_CLIP_MAX 32767
-#define SMSBARE_HAS_FM_AUDIO 1
 
 #ifndef SMSBARE_ENABLE_DEBUG_OVERLAY
 #define SMSBARE_ENABLE_DEBUG_OVERLAY 0
-#endif
-
-#ifndef SMSBARE_ONE_ROM_MODE
-#define SMSBARE_ONE_ROM_MODE 0
-#endif
-#ifndef SMSBARE_BOOT_MODE_DEFAULT_ENUM
-#define SMSBARE_BOOT_MODE_DEFAULT_ENUM 0
-#endif
-#ifndef SMSBARE_BOOT_MODE_LOCKED
-#define SMSBARE_BOOT_MODE_LOCKED 0
 #endif
 
 CComboKernel *CComboKernel::s_Instance = 0;
@@ -1906,7 +1895,7 @@ CComboKernel::CComboKernel(void)
 	m_CoreListLoaded(FALSE),
 	m_CoreSwitchPending(FALSE),
 	m_CoreRebootRequested(FALSE),
-	m_BootMode((SMSBARE_BOOT_MODE_DEFAULT_ENUM <= 2u) ? SMSBARE_BOOT_MODE_DEFAULT_ENUM : kBootModeNorm),
+	m_BootMode(kBootModeNorm),
 	m_MachineProfile(backend_machine_profile_default()->id),
 	m_ProcessorMode(ClampProcessorMode(0u)),
 	m_RamMapperKb(kRamMapperKbDefault),
@@ -1919,7 +1908,7 @@ CComboKernel::CComboKernel(void)
 	m_RuntimeKeyboardReplayBudget(0u),
 	m_RuntimeKeyboardDispatchedModifiers(0u),
 	m_RuntimeKeyboardDispatchedRawKeys{0u, 0u, 0u, 0u, 0u, 0u},
-	m_FmMusicEnabled(SMSBARE_HAS_FM_AUDIO ? TRUE : FALSE),
+	m_FmMusicEnabled(TRUE),
 	m_FmLayerGainPct(80u),
 	m_SccCartEnabled(FALSE),
 	m_SccDualCartEnabled(FALSE),
@@ -2143,28 +2132,8 @@ void CComboKernel::NormalizeSettingsForBuild(void)
 		m_OverscanPercent = DefaultViewportScalePercent();
 		m_ScaleMaxFitEnabled = FALSE;
 	}
-	/*
-	 * If build defines an explicit machine profile, lock boot to that profile.
-	 * Otherwise preserve persisted/user-selected machine profile and only clamp
-	 * to profiles supported by the current build.
-	 */
-#ifdef SMSBARE_MACHINE_BOOT_PROFILE
-	m_MachineProfile = ClampMachineProfileForBuild((unsigned) SMSBARE_MACHINE_BOOT_PROFILE);
-#else
 	m_MachineProfile = ClampMachineProfileForBuild(m_MachineProfile);
-#endif
-
-#if SMSBARE_ONE_ROM_MODE
-	if (IsMachineProfileSupportedByBuild(2u))
-	{
-		m_MachineProfile = 2u;
-	}
-	m_BootMode = kBootModeGame;
-#elif SMSBARE_BOOT_MODE_LOCKED
-	m_BootMode = (SMSBARE_BOOT_MODE_DEFAULT_ENUM <= kBootModeGame) ? SMSBARE_BOOT_MODE_DEFAULT_ENUM : kBootModeNorm;
-#else
-	m_BootMode = (m_BootMode > kBootModeGame) ? kBootModeNorm : m_BootMode;
-#endif
+	m_BootMode = kBootModeNorm;
 
 	m_DiskRomEnabled = FALSE;
 	m_MegaRamKb = 0u;
@@ -3692,7 +3661,7 @@ void CComboKernel::KeyPressedHandler(const char *text)
 
 void CComboKernel::LogVdpTraceUart(void)
 {
-#if !SMSBARE_ENABLE_SMSPLUS || !SMSBARE_ENABLE_DEBUG_OVERLAY
+#if !SMSBARE_ENABLE_DEBUG_OVERLAY
 	return;
 #else
 	if (!m_UartTelemetryEnabled)
@@ -3790,7 +3759,7 @@ void CComboKernel::LogAudioPortTraceUart(void)
 
 void CComboKernel::LogKmgTraceUart(void)
 {
-#if !SMSBARE_ENABLE_SMSPLUS || !SMSBARE_ENABLE_DEBUG_OVERLAY
+#if !SMSBARE_ENABLE_DEBUG_OVERLAY
 	return;
 #else
 	if (!m_UartTelemetryEnabled)

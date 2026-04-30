@@ -6,8 +6,6 @@ ambiente, preparo de SD e empacotamento do SMSBarePI.
 ## Resumo rapido
 
 - `build-config.sh`: build assistido do artefato default.
-- `menuconfig.sh`: sincroniza ou abre o Kconfig do projeto.
-- `gen-build-header.sh`: gera `build/config_build.h`.
 - `install-toolchains.sh`: instala/valida dependencias de toolchain por SO.
 - `check-toolchain.sh`: checa toolchain AArch64.
 - `check-third-party-pristine.sh`: garante que `third_party/circle` e `third_party/smsplus` estejam limpos.
@@ -51,22 +49,8 @@ Antes de targets que dependem de Circle/SMS Plus GX, rode:
 make guard-third-party
 ```
 
-## Menuconfig
-
-Abrir interface:
-
-```sh
-./scripts/menuconfig.sh
-```
-
-Sincronizar `.config`/`build/config.mk` sem abrir UI:
-
-```sh
-NON_INTERACTIVE=1 ./scripts/menuconfig.sh --sync-only
-```
-
-O backend SMS e fixo em `sms.smsplus`; o menuconfig cobre apenas opcoes gerais
-de build, debug, boot mode e identificacao de build.
+O backend SMS e fixo em `sms.smsplus`. Opcoes de build suportadas ficam na
+linha de comando, por exemplo `make DEBUG=0` ou `make OWNER=<nome>`.
 
 ## Initramfs
 

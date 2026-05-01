@@ -28,7 +28,7 @@ extern const TComboLocaleStrings g_ComboLocaleEN = {
     "EMPTY",
     "[DEL] Eject Tape",
     "Language",
-    "Scale",
+    "Overscan",
     "Scanline",
     "Color Artifacts",
     "CORE",

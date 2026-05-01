@@ -28,7 +28,7 @@ extern const TComboLocaleStrings g_ComboLocalePT = {
     "VAZIO",
     "[DEL] Ejetar Fita",
     "Idioma",
-    "Escala",
+    "Overscan",
     "Scanline",
     "Artefatos Cor",
     "CORE",

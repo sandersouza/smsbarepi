@@ -78,29 +78,6 @@ static unsigned MenuProcessorModeClamp(unsigned mode)
     return mode == 1u ? 1u : 0u;
 }
 
-static unsigned MenuScalePercentClamp(unsigned percent)
-{
-    if (percent <= 200u)
-    {
-        return 200u;
-    }
-    if (percent <= 250u)
-    {
-        return 250u;
-    }
-    return 300u;
-}
-
-static const char *MenuScaleModeLabel(unsigned percent)
-{
-    switch (MenuScalePercentClamp(percent))
-    {
-    case 200u: return "1x";
-    case 250u: return "2x";
-    default: return "3x";
-    }
-}
-
 static const char *MenuProcessorModeLabel(unsigned mode)
 {
     return MenuProcessorModeClamp(mode) == 1u ? "6309" : "6809";
@@ -357,7 +334,7 @@ const TComboMenuItem *combo_menu_load_cassette_items_get(unsigned language,
 }
 
 const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
-                                                     unsigned scale_percent,
+                                                     boolean overscan_enabled,
                                                      unsigned scanline_mode,
                                                      boolean color_artifacts_enabled,
                                                      boolean gfx9000_enabled,
@@ -376,7 +353,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
 {
     static TComboMenuItem settings_items[32];
     static char language_label[32];
-    static char scale_label[32];
+    static char overscan_label[32];
     static char scanline_label[32];
     static char color_artifacts_label[40];
     static char core_label[32];
@@ -406,7 +383,8 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     (void) scc_dual_cart_available;
 
     BuildLabelFlag(language_label, sizeof(language_label), locale->settings_language, combo_locale_language_code(language));
-    BuildLabelFlag(scale_label, sizeof(scale_label), locale->settings_scale, MenuScaleModeLabel(scale_percent));
+    BuildLabelFlag(overscan_label, sizeof(overscan_label), locale->settings_overscan,
+                   overscan_enabled ? locale->flag_on : locale->flag_off);
     BuildLabelFlag(scanline_label, sizeof(scanline_label), locale->settings_scanlines,
                    scanline_mode == 0u ? locale->flag_off : locale->flag_on);
     BuildLabelFlag(color_artifacts_label, sizeof(color_artifacts_label), locale->settings_color_artifacts,
@@ -436,15 +414,11 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     } while (0)
 
     const boolean show_machine = (MenuSupportedProfileCount() > 1u) ? TRUE : FALSE;
-    const boolean show_scale = SMSBARE_ENABLE_DEBUG_OVERLAY ? TRUE : FALSE;
     const boolean show_processor = FALSE;
     const boolean show_color_artifacts = FALSE;
     ADD_SETTING_ITEM(language_label, ComboMenuActionCycleLanguage, ComboMenuRedrawMenuOnly, TRUE);
     ADD_SETTING_ITEM("", ComboMenuActionSeparator, ComboMenuRedrawMenuOnly, FALSE);
-    if (show_scale)
-    {
-        ADD_SETTING_ITEM(scale_label, ComboMenuActionOverscanChanged, ComboMenuRedrawMenuAndViewport, TRUE);
-    }
+    ADD_SETTING_ITEM(overscan_label, ComboMenuActionToggleOverscan, ComboMenuRedrawMenuAndViewport, TRUE);
     ADD_SETTING_ITEM(scanline_label, ComboMenuActionCycleScanlines, ComboMenuRedrawMenuAndViewport, TRUE);
     if (show_color_artifacts)
     {

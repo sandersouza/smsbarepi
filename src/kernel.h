@@ -97,7 +97,7 @@ private:
     void CycleCoreSelection(boolean reverse);
     void HandleSettingsMenuClosed(void);
     boolean PersistSelectedCoreToBootConfig(void);
-    void ApplyFixedScreenMode(const char *source);
+    void ApplyScaledScreenMode(unsigned source_width, unsigned source_height, const char *source);
     boolean InitializeSettingsStorage(void);
     boolean MountSettingsFileSystem(const char *phase);
     unsigned BuildSettingsPayload(char *buffer, unsigned buffer_size);
@@ -248,9 +248,8 @@ private:
     u16 m_BlitRunDstX[kBlitMapMaxAxis];
     u16 m_BlitRunLen[kBlitMapMaxAxis];
     CComboPauseMenu m_PauseMenu;
-    unsigned m_OverscanPercent;
-    boolean m_ScaleMaxFitEnabled;
     unsigned m_Language;
+    boolean m_OverscanEnabled;
     unsigned m_ScanlineMode;
     boolean m_ColorArtifactsEnabled;
     boolean m_Gfx9000Enabled;

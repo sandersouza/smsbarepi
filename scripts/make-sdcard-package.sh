@@ -42,8 +42,8 @@ ensure_settings_cfg() {
   mkdir -p "$(dirname "$PACKAGE_SETTINGS_CFG")"
   cat > "$PACKAGE_SETTINGS_CFG" <<'EOF'
 backend_id=sms.smsplus
-scale=3
 language=1
+overscan=0
 scanline=0
 color_artifacts=0
 machine=0

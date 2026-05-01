@@ -28,7 +28,7 @@ extern const TComboLocaleStrings g_ComboLocaleES = {
     "VACIO",
     "[DEL] Expulsar Cinta",
     "Idioma",
-    "Escala",
+    "Overscan",
     "Scanline",
     "Artefactos Color",
     "CORE",

@@ -13,5 +13,7 @@ Arquivos esperados na particao FAT:
 - `sms/slot-last.sav` quando Save State for usado
 
 O `config.txt` deve apontar `kernel=sms.img` e `initramfs sms.cpio followkernel`.
-A proporcao de video do runtime SMS e fixa em 4:3 (`640x480`) via framebuffer Circle,
-sem depender de `sms.cfg` ou `config.txt`.
+O framebuffer Circle do runtime SMS acompanha a area ativa do frame. `Overscan OFF`,
+padrao, usa framebuffer `2.25x` (`256x192` -> `576x432`) com o viewport em `2x`
+centralizado. `Overscan ON` usa escala `2x` exata (`256x192` -> `512x384`).
+`Scale` e `Proportion` nao sao opcoes de Settings.

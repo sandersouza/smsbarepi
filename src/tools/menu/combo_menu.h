@@ -13,14 +13,10 @@ public:
     ~CComboPauseMenu(void);
 
     void Reset(void);
-    void SetScalePercent(unsigned percent);
-    void SetScaleMaxFitEnabled(boolean enabled);
-    void SetMaxScalePercent(unsigned percent);
     void SetLanguage(unsigned language);
+    void SetOverscanEnabled(boolean enabled);
     void SetColorArtifactsEnabled(boolean enabled);
     unsigned GetLanguage(void) const;
-    unsigned GetScalePercent(void) const;
-    boolean IsScaleMaxFitEnabled(void) const;
     void SetScanlineMode(unsigned mode);
     void SetGfx9000Enabled(boolean enabled);
     void SetDiskRomEnabled(boolean enabled);
@@ -104,10 +100,8 @@ private:
     unsigned m_LastDrawnSelected;
     boolean m_Visible;
     unsigned m_View;
-    unsigned m_ScalePercent;
-    boolean m_ScaleMaxFitEnabled;
-    unsigned m_MaxScalePercent;
     unsigned m_Language;
+    boolean m_OverscanEnabled;
     unsigned m_ScanlineMode;
     boolean m_ColorArtifactsEnabled;
     boolean m_Gfx9000Enabled;
@@ -155,10 +149,8 @@ private:
     char m_PendingCassetteBrowserPath[192];
     boolean m_LastBackPressed;
     unsigned m_LastDrawnView;
-    unsigned m_LastDrawnScalePercent;
-    boolean m_LastDrawnScaleMaxFitEnabled;
-    unsigned m_LastDrawnMaxScalePercent;
     unsigned m_LastDrawnLanguage;
+    boolean m_LastDrawnOverscanEnabled;
     unsigned m_LastDrawnScanlineMode;
     boolean m_LastDrawnColorArtifactsEnabled;
     boolean m_LastDrawnGfx9000Enabled;

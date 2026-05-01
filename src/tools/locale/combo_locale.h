@@ -37,7 +37,7 @@ typedef struct {
     const char *load_cassette_empty;
     const char *load_cassette_unload_hint;
     const char *settings_language;
-    const char *settings_scale;
+    const char *settings_overscan;
     const char *settings_scanlines;
     const char *settings_color_artifacts;
     const char *settings_core;

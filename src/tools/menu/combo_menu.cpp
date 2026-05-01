@@ -223,10 +223,8 @@ CComboPauseMenu::CComboPauseMenu(void)
   m_LastDrawnSelected(0xFFFFFFFFu),
     m_Visible(FALSE),
     m_View(MenuViewRoot),
-    m_ScalePercent(300u),
-    m_ScaleMaxFitEnabled(FALSE),
-    m_MaxScalePercent(300u),
     m_Language(ComboLanguageEN),
+    m_OverscanEnabled(FALSE),
     m_ScanlineMode(0u),
     m_ColorArtifactsEnabled(TRUE),
     m_Gfx9000Enabled(FALSE),
@@ -274,9 +272,8 @@ CComboPauseMenu::CComboPauseMenu(void)
     m_PendingCassetteBrowserPath{0},
     m_LastBackPressed(FALSE),
     m_LastDrawnView(MenuViewRoot),
-    m_LastDrawnScalePercent(0u),
-    m_LastDrawnMaxScalePercent(0u),
     m_LastDrawnLanguage(ComboLanguageEN),
+    m_LastDrawnOverscanEnabled(FALSE),
     m_LastDrawnScanlineMode(0u),
     m_LastDrawnColorArtifactsEnabled(TRUE),
     m_LastDrawnGfx9000Enabled(FALSE),
@@ -394,10 +391,8 @@ void CComboPauseMenu::Reset(void)
     m_Visible = FALSE;
     m_LastBackPressed = FALSE;
     m_LastDrawnView = MenuViewRoot;
-    m_LastDrawnScalePercent = m_ScalePercent;
-    m_LastDrawnScaleMaxFitEnabled = m_ScaleMaxFitEnabled;
-    m_LastDrawnMaxScalePercent = m_MaxScalePercent;
     m_LastDrawnLanguage = m_Language;
+    m_LastDrawnOverscanEnabled = m_OverscanEnabled;
     m_LastDrawnScanlineMode = m_ScanlineMode;
     m_LastDrawnColorArtifactsEnabled = m_ColorArtifactsEnabled;
     m_LastDrawnGfx9000Enabled = m_Gfx9000Enabled;
@@ -464,64 +459,6 @@ void CComboPauseMenu::Reset(void)
     m_MenuBackbufferY = 0u;
 }
 
-void CComboPauseMenu::SetScalePercent(unsigned percent)
-{
-    if (percent <= 200u)
-    {
-        percent = 200u;
-    }
-    else if (percent <= 250u)
-    {
-        percent = 250u;
-    }
-    else
-    {
-        percent = 300u;
-    }
-    if (percent > m_MaxScalePercent) percent = m_MaxScalePercent;
-
-    if (m_ScalePercent != percent)
-    {
-        m_ScalePercent = percent;
-        m_ForceRedraw = TRUE;
-    }
-}
-
-void CComboPauseMenu::SetScaleMaxFitEnabled(boolean enabled)
-{
-    (void) enabled;
-    if (m_ScaleMaxFitEnabled != FALSE)
-    {
-        m_ScaleMaxFitEnabled = FALSE;
-        m_ForceRedraw = TRUE;
-    }
-}
-
-void CComboPauseMenu::SetMaxScalePercent(unsigned percent)
-{
-    if (percent <= 200u)
-    {
-        percent = 200u;
-    }
-    else if (percent <= 250u)
-    {
-        percent = 250u;
-    }
-    else
-    {
-        percent = 300u;
-    }
-    if (m_MaxScalePercent != percent)
-    {
-        m_MaxScalePercent = percent;
-        if (m_ScalePercent > m_MaxScalePercent)
-        {
-            m_ScalePercent = m_MaxScalePercent;
-        }
-        m_ForceRedraw = TRUE;
-    }
-}
-
 void CComboPauseMenu::SetLanguage(unsigned language)
 {
     language = combo_locale_clamp_language(language);
@@ -537,14 +474,14 @@ unsigned CComboPauseMenu::GetLanguage(void) const
     return m_Language;
 }
 
-unsigned CComboPauseMenu::GetScalePercent(void) const
+void CComboPauseMenu::SetOverscanEnabled(boolean enabled)
 {
-    return m_ScalePercent;
-}
-
-boolean CComboPauseMenu::IsScaleMaxFitEnabled(void) const
-{
-    return FALSE;
+    enabled = enabled ? TRUE : FALSE;
+    if (m_OverscanEnabled != enabled)
+    {
+        m_OverscanEnabled = enabled;
+        m_ForceRedraw = TRUE;
+    }
 }
 
 void CComboPauseMenu::SetScanlineMode(unsigned mode)
@@ -1076,7 +1013,7 @@ const TComboMenuItem *CComboPauseMenu::GetItems(unsigned *count) const
     {
         return combo_menu_settings_items_get(
             m_Language,
-            m_ScalePercent,
+            m_OverscanEnabled,
             m_ScanlineMode,
             m_ColorArtifactsEnabled,
             m_Gfx9000Enabled,
@@ -1298,6 +1235,38 @@ TComboMenuAction CComboPauseMenu::ProcessInput(boolean paused,
     TComboMenuAction action = ComboMenuActionNone;
     const boolean joystick_capture_edge =
         (joystick_capture_code != 0u && joystick_capture_code != m_LastJoystickCaptureCode) ? TRUE : FALSE;
+    const boolean enter_edge = enter_pressed && !m_LastEnterPressed;
+
+    if (m_View == MenuViewSettings
+        && enter_edge
+        && m_Selected < item_count
+        && items[m_Selected].selectable
+        && items[m_Selected].action == ComboMenuActionOpenJoystickMap)
+    {
+        m_JoystickMapReturnSelected = m_Selected;
+        for (unsigned i = 0u; i < CUsbHidGamepad::MapSlotCount; ++i)
+        {
+            m_JoystickMapEditCodes[i] = m_JoystickMapCodes[i];
+        }
+        m_JoystickMapDirty = FALSE;
+        m_LastJoystickCaptureCode = joystick_capture_code;
+        m_View = MenuViewJoystickMap;
+        m_Selected = FindFirstSelectable();
+        m_ForceRedraw = TRUE;
+        m_ForceHighlightRedraw = FALSE;
+        m_RequestBackgroundRestore = TRUE;
+        ResetRepeatState();
+        m_LastBackPressed = back_pressed;
+        m_LastUpPressed = up_pressed;
+        m_LastDownPressed = down_pressed;
+        m_LastPageUpPressed = page_up_pressed;
+        m_LastPageDownPressed = page_down_pressed;
+        m_LastLeftPressed = left_pressed;
+        m_LastRightPressed = right_pressed;
+        m_LastEnterPressed = enter_pressed;
+        m_LastDeletePressed = delete_pressed;
+        return ComboMenuActionNone;
+    }
 
     if (back_pressed && !m_LastBackPressed && m_View == MenuViewJoystickMap)
     {
@@ -1629,43 +1598,16 @@ TComboMenuAction CComboPauseMenu::ProcessInput(boolean paused,
     boolean handled_settings_input = FALSE;
     if (m_View == MenuViewSettings && items[m_Selected].selectable)
     {
-        const boolean enter_edge = enter_pressed && !m_LastEnterPressed;
         const boolean left_step = ComboConsumeHoldRepeat(left_pressed, m_LastLeftPressed, &m_LeftHoldFrames);
         const boolean right_step = ComboConsumeHoldRepeat(right_pressed, m_LastRightPressed, &m_RightHoldFrames);
 
-        if (items[m_Selected].action == ComboMenuActionOverscanChanged)
+        if (items[m_Selected].action == ComboMenuActionToggleOverscan)
         {
-            unsigned next_value = m_ScalePercent;
-            if (left_step)
+            if (enter_edge || left_step || right_step)
             {
-                if (next_value > 250u)
-                {
-                    next_value = 250u;
-                }
-                else if (next_value > 200u)
-                {
-                    next_value = 200u;
-                }
-            }
-            if (right_step || enter_edge)
-            {
-                if (next_value < 250u)
-                {
-                    next_value = 250u;
-                }
-                else if (next_value < 300u)
-                {
-                    next_value = 300u;
-                }
-            }
-
-            if (next_value != m_ScalePercent)
-            {
-                m_ScalePercent = next_value;
-                m_ScaleMaxFitEnabled = FALSE;
+                action = ComboMenuActionToggleOverscan;
                 m_ForceRedraw = TRUE;
                 m_ForceHighlightRedraw = FALSE;
-                action = ComboMenuActionOverscanChanged;
             }
             handled_settings_input = enter_edge || left_step || right_step;
         }
@@ -1856,21 +1798,6 @@ TComboMenuAction CComboPauseMenu::ProcessInput(boolean paused,
         else if (m_View == MenuViewRoot && items[m_Selected].action == ComboMenuActionCassette)
         {
             m_View = MenuViewLoadCassette;
-            m_Selected = FindFirstSelectable();
-            m_ForceRedraw = TRUE;
-            m_ForceHighlightRedraw = FALSE;
-            m_RequestBackgroundRestore = TRUE;
-        }
-        else if (m_View == MenuViewSettings && items[m_Selected].action == ComboMenuActionOpenJoystickMap)
-        {
-            m_JoystickMapReturnSelected = m_Selected;
-            for (unsigned i = 0u; i < CUsbHidGamepad::MapSlotCount; ++i)
-            {
-                m_JoystickMapEditCodes[i] = m_JoystickMapCodes[i];
-            }
-            m_JoystickMapDirty = FALSE;
-            m_LastJoystickCaptureCode = joystick_capture_code;
-            m_View = MenuViewJoystickMap;
             m_Selected = FindFirstSelectable();
             m_ForceRedraw = TRUE;
             m_ForceHighlightRedraw = FALSE;
@@ -2157,10 +2084,8 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
      && m_LastBoxH == box_h_px
      && m_LastDrawnSelected == m_Selected
      && m_LastDrawnView == m_View
-     && m_LastDrawnScalePercent == m_ScalePercent
-     && m_LastDrawnScaleMaxFitEnabled == m_ScaleMaxFitEnabled
-     && m_LastDrawnMaxScalePercent == m_MaxScalePercent
      && m_LastDrawnLanguage == m_Language
+     && m_LastDrawnOverscanEnabled == m_OverscanEnabled
      && m_LastDrawnScanlineMode == m_ScanlineMode
      && m_LastDrawnColorArtifactsEnabled == m_ColorArtifactsEnabled
      && m_LastDrawnGfx9000Enabled == m_Gfx9000Enabled
@@ -2458,10 +2383,8 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
     m_Col = box_x;
     m_LastDrawnSelected = m_Selected;
     m_LastDrawnView = m_View;
-    m_LastDrawnScalePercent = m_ScalePercent;
-    m_LastDrawnScaleMaxFitEnabled = m_ScaleMaxFitEnabled;
-    m_LastDrawnMaxScalePercent = m_MaxScalePercent;
     m_LastDrawnLanguage = m_Language;
+    m_LastDrawnOverscanEnabled = m_OverscanEnabled;
     m_LastDrawnScanlineMode = m_ScanlineMode;
     m_LastDrawnColorArtifactsEnabled = m_ColorArtifactsEnabled;
     m_LastDrawnGfx9000Enabled = m_Gfx9000Enabled;

@@ -28,6 +28,7 @@ public:
     unsigned GetMachineProfile(void) const;
     void SetProcessorMode(unsigned mode);
     unsigned GetProcessorMode(void) const;
+    void SetAutofireEnabled(boolean enabled);
     void SetRamMapperKb(unsigned kb);
     unsigned GetRamMapperKb(void) const;
     void SetMegaRamKb(unsigned kb);
@@ -110,6 +111,7 @@ private:
     unsigned m_BootMode;
     unsigned m_MachineProfile;
     unsigned m_ProcessorMode;
+    boolean m_AutofireEnabled;
     unsigned m_RamMapperKb;
     unsigned m_MegaRamKb;
     u16 m_JoystickMapCodes[CUsbHidGamepad::MapSlotCount];
@@ -159,6 +161,7 @@ private:
     unsigned m_LastDrawnBootMode;
     unsigned m_LastDrawnMachineProfile;
     unsigned m_LastDrawnProcessorMode;
+    boolean m_LastDrawnAutofireEnabled;
     unsigned m_LastDrawnRamMapperKb;
     unsigned m_LastDrawnMegaRamKb;
     boolean m_LastDrawnFmMusic;

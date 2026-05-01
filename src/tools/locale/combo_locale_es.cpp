@@ -34,6 +34,7 @@ extern const TComboLocaleStrings g_ComboLocaleES = {
     "CORE",
     "Máquina",
     "Procesador",
+    "Autofire",
     "Mappeo de joystick",
     "Ganancia Audio",
     "Joystick ARRIBA",

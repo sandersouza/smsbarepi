@@ -233,6 +233,7 @@ CComboPauseMenu::CComboPauseMenu(void)
     m_BootMode(0u),
     m_MachineProfile(0u),
     m_ProcessorMode(0u),
+    m_AutofireEnabled(FALSE),
     m_RamMapperKb(512u),
     m_MegaRamKb(0u),
     m_JoystickMapCodes{0u},
@@ -282,6 +283,7 @@ CComboPauseMenu::CComboPauseMenu(void)
     m_LastDrawnBootMode(0u),
     m_LastDrawnMachineProfile(0u),
     m_LastDrawnProcessorMode(0u),
+    m_LastDrawnAutofireEnabled(FALSE),
     m_LastDrawnRamMapperKb(0u),
     m_LastDrawnMegaRamKb(0u),
     m_LastDrawnFmMusic(TRUE),
@@ -401,6 +403,7 @@ void CComboPauseMenu::Reset(void)
     m_LastDrawnBootMode = m_BootMode;
     m_LastDrawnMachineProfile = m_MachineProfile;
     m_LastDrawnProcessorMode = m_ProcessorMode;
+    m_LastDrawnAutofireEnabled = m_AutofireEnabled;
     m_LastDrawnFmMusic = m_FmMusicEnabled;
     m_LastDrawnSccCart = m_SccCartEnabled;
     m_LastDrawnSccDualCart = m_SccDualCartEnabled;
@@ -504,6 +507,16 @@ void CComboPauseMenu::SetColorArtifactsEnabled(boolean enabled)
     if (m_ColorArtifactsEnabled != enabled)
     {
         m_ColorArtifactsEnabled = enabled;
+        m_ForceRedraw = TRUE;
+    }
+}
+
+void CComboPauseMenu::SetAutofireEnabled(boolean enabled)
+{
+    enabled = enabled ? TRUE : FALSE;
+    if (m_AutofireEnabled != enabled)
+    {
+        m_AutofireEnabled = enabled;
         m_ForceRedraw = TRUE;
     }
 }
@@ -1028,6 +1041,7 @@ const TComboMenuItem *CComboPauseMenu::GetItems(unsigned *count) const
             m_SccDualCartEnabled,
             m_SccDualCartAvailable,
             m_AudioGainPercent,
+            m_AutofireEnabled,
             count);
     }
     if (m_View == MenuViewJoystickMap)
@@ -1737,6 +1751,7 @@ TComboMenuAction CComboPauseMenu::ProcessInput(boolean paused,
               || (items[m_Selected].action == ComboMenuActionToggleColorArtifacts)
               || (items[m_Selected].action == ComboMenuActionToggleGfx9000)
               || (items[m_Selected].action == ComboMenuActionToggleDiskRom)
+              || (items[m_Selected].action == ComboMenuActionToggleAutofire)
               || (items[m_Selected].action == ComboMenuActionToggleSccCart))
         {
             if (enter_edge || left_step || right_step)
@@ -2094,6 +2109,7 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
      && m_LastDrawnBootMode == m_BootMode
      && m_LastDrawnMachineProfile == m_MachineProfile
      && m_LastDrawnProcessorMode == m_ProcessorMode
+     && m_LastDrawnAutofireEnabled == m_AutofireEnabled
      && m_LastDrawnRamMapperKb == m_RamMapperKb
      && m_LastDrawnMegaRamKb == m_MegaRamKb
      && m_LastDrawnFmMusic == m_FmMusicEnabled
@@ -2393,6 +2409,7 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
     m_LastDrawnBootMode = m_BootMode;
     m_LastDrawnMachineProfile = m_MachineProfile;
     m_LastDrawnProcessorMode = m_ProcessorMode;
+    m_LastDrawnAutofireEnabled = m_AutofireEnabled;
     m_LastDrawnRamMapperKb = m_RamMapperKb;
     m_LastDrawnMegaRamKb = m_MegaRamKb;
     m_LastDrawnFmMusic = m_FmMusicEnabled;

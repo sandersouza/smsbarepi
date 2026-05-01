@@ -29,6 +29,8 @@ Data: 2026-04-26
 - Ao sair de Settings, o kernel executa `HandleSettingsMenuClosed()` e agenda `SaveSettingsToStorage()`. Se `CORE` mudou, o mesmo fechamento tambem persiste `SD:/config.txt` e agenda reboot. Sair direto do pause menu com Settings ativo continua usando o mesmo fechamento.
 - A mecanica `make menuconfig`/Kconfig foi removida do build SMS-only. O `Makefile` nao le `.config`, nao gera `build/config_build.h`, e o kernel nao usa flags de boot mode/feature enable vindas de Kconfig; o boot mode SMS permanece fixo em `NORM`. As opcoes de build restantes sao flags diretas como `DEBUG=0|1` e `OWNER=<nome>`.
 - `Settings -> Joypad Mapping` prioriza o edge de `Enter/Select` antes do tratamento generico de `Back`, evitando que controles HID que reportam os dois sinais no mesmo frame retornem ao menu principal em vez de abrir o submenu.
+- Teclado USB tambem alimenta a ponte de joystick em runtime: setas cursoras viram direcional, `Space` vira Botao 2 e `M` vira Botao 1.
+- `Settings -> Autofire` controla a autorepeticao do Botao 2, persistida como `autofire=0|1` em `SD:/sms.cfg`; o primeiro teste usa 10 repeticoes por segundo.
 
 ## Validacao
 

@@ -86,7 +86,7 @@ private:
     void ExitPauseForBackendAction(void);
     void ClearRuntimeKeyboardState(boolean drain_pending_reports);
     void UpdateJoystickFromRaw(unsigned char modifiers, const unsigned char raw_keys[6]);
-    u8 ResolveRuntimeJoystickBits(void) const;
+    u8 ResolveRuntimeJoystickBits(void);
     void PushKeyboardStateToRuntime(void);
     void SetDebugOverlayMode(unsigned mode);
     void SetUartTelemetryEnabled(boolean enabled);
@@ -268,6 +268,10 @@ private:
     unsigned m_ProcessorMode;
     unsigned m_RamMapperKb;
     unsigned m_MegaRamKb;
+    boolean m_AutofireEnabled;
+    boolean m_AutofireButton2Active;
+    boolean m_AutofireButton2OutputOn;
+    u64 m_AutofireButton2LastToggleUs;
     unsigned char m_LastKeyboardModifiers;
     unsigned char m_LastKeyboardRawKeys[6];
     unsigned char m_RuntimeKeyboardModifiers;

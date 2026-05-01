@@ -12,10 +12,24 @@ static const u8 kHidKeyEsc = 0x29;
 static const u8 kHidKeyDel = 0x4C;
 static const u8 kHidKeyF11 = 0x44;
 static const u8 kHidKeyF12 = 0x45;
+static const u8 kHidKeySpace = 0x2C;
+static const u8 kHidKeyM = 0x10;
+
+static const u8 kJoyBridgeRight = (u8) (1u << 0);
+static const u8 kJoyBridgeLeft = (u8) (1u << 1);
+static const u8 kJoyBridgeDown = (u8) (1u << 2);
+static const u8 kJoyBridgeUp = (u8) (1u << 3);
+static const u8 kJoyBridgeFireA = (u8) (1u << 4);
+static const u8 kJoyBridgeFireB = (u8) (1u << 5);
 
 u8 ComboKeyboardJoyMask(void)
 {
-	return 0u;
+	return (u8) (kJoyBridgeRight
+		| kJoyBridgeLeft
+		| kJoyBridgeDown
+		| kJoyBridgeUp
+		| kJoyBridgeFireA
+		| kJoyBridgeFireB);
 }
 
 void ComboDecodeKeyboardRaw(unsigned char modifiers,
@@ -61,19 +75,31 @@ void ComboDecodeKeyboardRaw(unsigned char modifiers,
 		}
 		if (key == kHidKeyUp)
 		{
+			out_state->bridge_bits |= kJoyBridgeUp;
 			out_state->menu_up_pressed = TRUE;
 		}
 		if (key == kHidKeyDown)
 		{
+			out_state->bridge_bits |= kJoyBridgeDown;
 			out_state->menu_down_pressed = TRUE;
 		}
 		if (key == kHidKeyLeft)
 		{
+			out_state->bridge_bits |= kJoyBridgeLeft;
 			out_state->menu_left_pressed = TRUE;
 		}
 		if (key == kHidKeyRight)
 		{
+			out_state->bridge_bits |= kJoyBridgeRight;
 			out_state->menu_right_pressed = TRUE;
+		}
+		if (key == kHidKeySpace)
+		{
+			out_state->bridge_bits |= kJoyBridgeFireB;
+		}
+		if (key == kHidKeyM)
+		{
+			out_state->bridge_bits |= kJoyBridgeFireA;
 		}
 		if (key == kHidKeyPageUp)
 		{

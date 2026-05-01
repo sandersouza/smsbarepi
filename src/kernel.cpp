@@ -404,6 +404,7 @@ static const u8 kJoyBridgeDown = (u8) (1u << 2);
 static const u8 kJoyBridgeUp = (u8) (1u << 3);
 static const u8 kJoyBridgeFireA = (u8) (1u << 4);
 static const u8 kJoyBridgeFireB = (u8) (1u << 5);
+static const u64 kAutofireHalfPeriodUs = 50000ull;
 static const boolean kBootQuiet = TRUE;
 
 #ifndef SMSBARE_BUILD_OWNER
@@ -1650,6 +1651,10 @@ CComboKernel::CComboKernel(void)
 	m_ProcessorMode(ClampProcessorMode(0u)),
 	m_RamMapperKb(kRamMapperKbDefault),
 	m_MegaRamKb(0u),
+	m_AutofireEnabled(FALSE),
+	m_AutofireButton2Active(FALSE),
+	m_AutofireButton2OutputOn(TRUE),
+	m_AutofireButton2LastToggleUs(0u),
 	m_LastKeyboardModifiers(0u),
 	m_LastKeyboardRawKeys{0u, 0u, 0u, 0u, 0u, 0u},
 	m_RuntimeKeyboardModifiers(0u),
@@ -1889,6 +1894,7 @@ void CComboKernel::NormalizeSettingsForBuild(void)
 	m_RamMapperKb = ClampRamMapperKb(m_RamMapperKb);
 	m_ProcessorMode = ClampProcessorMode(m_ProcessorMode);
 	m_MegaRamKb = ClampMegaRamKb(m_MegaRamKb);
+	m_AutofireEnabled = m_AutofireEnabled ? TRUE : FALSE;
 	m_ColorArtifactsEnabled = m_ColorArtifactsEnabled ? TRUE : FALSE;
 	if (!MachineProfileSupportsAllocRam(m_MachineProfile))
 	{
@@ -2275,6 +2281,7 @@ TComboShutdownMode CComboKernel::Run(void)
 	m_PauseMenu.SetBootMode(m_BootMode);
 	m_PauseMenu.SetMachineProfile(m_MachineProfile);
 	m_PauseMenu.SetProcessorMode(m_ProcessorMode);
+	m_PauseMenu.SetAutofireEnabled(m_AutofireEnabled);
 	m_PauseMenu.SetRamMapperKb(m_RamMapperKb);
 	m_PauseMenu.SetMegaRamKb(m_MegaRamKb);
 	{
@@ -4535,6 +4542,10 @@ void CComboKernel::LoadSettingsFromStorage(void)
 				{
 					m_ProcessorMode = ClampProcessorMode(value);
 				}
+				else if (SettingsKeyEquals(line, key_len, "autofire"))
+				{
+					m_AutofireEnabled = value ? TRUE : FALSE;
+				}
 				else if (SettingsKeyEquals(line, key_len, "rammapper_kb"))
 				{
 					m_RamMapperKb = ClampRamMapperKb(value);
@@ -4619,6 +4630,7 @@ void CComboKernel::LoadSettingsFromStorage(void)
 	m_PauseMenu.SetBootMode(m_BootMode);
 	m_PauseMenu.SetMachineProfile(m_MachineProfile);
 	m_PauseMenu.SetProcessorMode(m_ProcessorMode);
+	m_PauseMenu.SetAutofireEnabled(m_AutofireEnabled);
 	m_PauseMenu.SetRamMapperKb(m_RamMapperKb);
 	m_PauseMenu.SetMegaRamKb(m_MegaRamKb);
 	{
@@ -4705,6 +4717,7 @@ unsigned CComboKernel::BuildSettingsPayload(char *buffer, unsigned buffer_size)
 	APPEND_LINE_FMT("color_artifacts=%u\n", m_ColorArtifactsEnabled ? 1u : 0u);
 	APPEND_LINE_FMT("machine=%u\n", m_MachineProfile);
 	APPEND_LINE_FMT("processor=%u\n", m_ProcessorMode);
+	APPEND_LINE_FMT("autofire=%u\n", m_AutofireEnabled ? 1u : 0u);
 	APPEND_LINE_FMT("rammapper_kb=%u\n", m_RamMapperKb);
 	{
 		u16 joy_codes[CUsbHidGamepad::MapSlotCount];
@@ -5816,6 +5829,17 @@ void CComboKernel::HandleMenuAction(TComboMenuAction action)
 		}
 		break;
 
+	case ComboMenuActionToggleAutofire:
+		m_AutofireEnabled = m_AutofireEnabled ? FALSE : TRUE;
+		m_AutofireButton2Active = FALSE;
+		m_AutofireButton2OutputOn = TRUE;
+		m_AutofireButton2LastToggleUs = 0u;
+		m_PauseMenu.SetAutofireEnabled(m_AutofireEnabled);
+		RefreshSettingsUiAfterAction();
+		m_Logger.Write(FromKernel, LogNotice,
+			m_AutofireEnabled ? "Settings: Autofire ON" : "Settings: Autofire OFF");
+		break;
+
 	case ComboMenuActionCycleRamMapper:
 		if (MachineProfileSupportsAllocRam(m_MachineProfile))
 		{
@@ -6121,7 +6145,7 @@ void CComboKernel::PushKeyboardStateToRuntime(void)
 	backend_runtime_input_push_keyboard(m_RuntimeKeyboardModifiers, m_RuntimeKeyboardRawKeys);
 }
 
-u8 CComboKernel::ResolveRuntimeJoystickBits(void) const
+u8 CComboKernel::ResolveRuntimeJoystickBits(void)
 {
 	u8 bits = (u8) (m_JoyBridgeBits | m_UsbGamepad.GetBridgeBits());
 
@@ -6132,6 +6156,32 @@ u8 CComboKernel::ResolveRuntimeJoystickBits(void) const
 	if ((bits & (kJoyBridgeUp | kJoyBridgeDown)) == (kJoyBridgeUp | kJoyBridgeDown))
 	{
 		bits &= (u8) ~(kJoyBridgeUp | kJoyBridgeDown);
+	}
+
+	if (m_AutofireEnabled && (bits & kJoyBridgeFireB) != 0u)
+	{
+		const u64 now_us = CTimer::GetClockTicks64();
+		if (!m_AutofireButton2Active)
+		{
+			m_AutofireButton2Active = TRUE;
+			m_AutofireButton2OutputOn = TRUE;
+			m_AutofireButton2LastToggleUs = now_us;
+		}
+		while ((now_us - m_AutofireButton2LastToggleUs) >= kAutofireHalfPeriodUs)
+		{
+			m_AutofireButton2LastToggleUs += kAutofireHalfPeriodUs;
+			m_AutofireButton2OutputOn = m_AutofireButton2OutputOn ? FALSE : TRUE;
+		}
+		if (!m_AutofireButton2OutputOn)
+		{
+			bits &= (u8) ~kJoyBridgeFireB;
+		}
+	}
+	else
+	{
+		m_AutofireButton2Active = FALSE;
+		m_AutofireButton2OutputOn = TRUE;
+		m_AutofireButton2LastToggleUs = 0u;
 	}
 
 	return bits;

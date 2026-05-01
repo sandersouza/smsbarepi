@@ -349,6 +349,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
                                                      boolean scc_dual_cart_enabled,
                                                      boolean scc_dual_cart_available,
                                                      unsigned audio_gain_percent,
+                                                     boolean autofire_enabled,
                                                      unsigned *count)
 {
     static TComboMenuItem settings_items[32];
@@ -359,6 +360,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     static char core_label[32];
     static char machine_label[32];
     static char processor_label[32];
+    static char autofire_label[32];
     static char joypad_mapping_label[40];
     static char audio_gain_label[32];
 
@@ -395,6 +397,8 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
                    backend_machine_profile_label(machine_profile));
     BuildLabelFlag(processor_label, sizeof(processor_label), locale->settings_processor,
                    MenuProcessorModeLabel(processor_mode));
+    BuildLabelFlag(autofire_label, sizeof(autofire_label), locale->settings_autofire,
+                   autofire_enabled ? locale->flag_on : locale->flag_off);
     BuildLabelFlag(joypad_mapping_label, sizeof(joypad_mapping_label), locale->settings_joystick_map, "->");
     {
         const unsigned audio_gain_ui = AudioGainUiLevelFromPercent(audio_gain_percent);
@@ -436,6 +440,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     {
         ADD_SETTING_ITEM(processor_label, ComboMenuActionCycleProcessor, ComboMenuRedrawMenuOnly, TRUE);
     }
+    ADD_SETTING_ITEM(autofire_label, ComboMenuActionToggleAutofire, ComboMenuRedrawMenuOnly, TRUE);
     ADD_SETTING_ITEM(joypad_mapping_label, ComboMenuActionOpenJoystickMap, ComboMenuRedrawMenuOnly, TRUE);
 
 #undef ADD_SETTING_ITEM

@@ -93,5 +93,6 @@ Arquivos canonicos no SD:
 - configuracao: `sms.cfg`
 - ROMs de usuario: `SD:/sms/roms`
 
-O `sms.cfg` default gerado pelos scripts usa `cartridge_path=` para o cartucho
-selecionado. Quando vazio, o backend sobe com `bios.sms` do initramfs.
+O `sms.cfg` default gerado pelos scripts nao persiste midia. ROMs, discos e
+cassetes devem ser carregados manualmente; no boot, o backend sobe com
+`bios.sms` do initramfs quando nenhum cartucho foi carregado.

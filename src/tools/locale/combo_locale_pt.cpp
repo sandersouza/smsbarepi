@@ -28,7 +28,6 @@ extern const TComboLocaleStrings g_ComboLocalePT = {
     "VAZIO",
     "[DEL] Ejetar Fita",
     "Idioma",
-    "Proporcao",
     "Escala",
     "Scanline",
     "Artefatos Cor",
@@ -48,7 +47,5 @@ extern const TComboLocaleStrings g_ComboLocalePT = {
     "LIG",
     "DUAL",
     "NONE",
-    "N/A",
-    "16:9",
-    "4:3"
+    "N/A"
 };

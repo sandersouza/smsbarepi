@@ -28,7 +28,6 @@ extern const TComboLocaleStrings g_ComboLocaleES = {
     "VACIO",
     "[DEL] Expulsar Cinta",
     "Idioma",
-    "Proporcion",
     "Escala",
     "Scanline",
     "Artefactos Color",
@@ -48,7 +47,5 @@ extern const TComboLocaleStrings g_ComboLocaleES = {
     "ACT",
     "DUAL",
     "NONE",
-    "N/D",
-    "16:9",
-    "4:3"
+    "N/D"
 };

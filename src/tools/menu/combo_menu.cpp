@@ -227,7 +227,6 @@ CComboPauseMenu::CComboPauseMenu(void)
     m_ScaleMaxFitEnabled(FALSE),
     m_MaxScalePercent(300u),
     m_Language(ComboLanguageEN),
-    m_ProportionMode(0u),
     m_ScanlineMode(0u),
     m_ColorArtifactsEnabled(TRUE),
     m_Gfx9000Enabled(FALSE),
@@ -278,7 +277,6 @@ CComboPauseMenu::CComboPauseMenu(void)
     m_LastDrawnScalePercent(0u),
     m_LastDrawnMaxScalePercent(0u),
     m_LastDrawnLanguage(ComboLanguageEN),
-    m_LastDrawnProportionMode(0u),
     m_LastDrawnScanlineMode(0u),
     m_LastDrawnColorArtifactsEnabled(TRUE),
     m_LastDrawnGfx9000Enabled(FALSE),
@@ -400,7 +398,6 @@ void CComboPauseMenu::Reset(void)
     m_LastDrawnScaleMaxFitEnabled = m_ScaleMaxFitEnabled;
     m_LastDrawnMaxScalePercent = m_MaxScalePercent;
     m_LastDrawnLanguage = m_Language;
-    m_LastDrawnProportionMode = m_ProportionMode;
     m_LastDrawnScanlineMode = m_ScanlineMode;
     m_LastDrawnColorArtifactsEnabled = m_ColorArtifactsEnabled;
     m_LastDrawnGfx9000Enabled = m_Gfx9000Enabled;
@@ -535,27 +532,9 @@ void CComboPauseMenu::SetLanguage(unsigned language)
     }
 }
 
-void CComboPauseMenu::SetProportionMode(unsigned mode)
-{
-    if (mode > 1u)
-    {
-        mode = 0u;
-    }
-    if (m_ProportionMode != mode)
-    {
-        m_ProportionMode = mode;
-        m_ForceRedraw = TRUE;
-    }
-}
-
 unsigned CComboPauseMenu::GetLanguage(void) const
 {
     return m_Language;
-}
-
-unsigned CComboPauseMenu::GetProportionMode(void) const
-{
-    return m_ProportionMode;
 }
 
 unsigned CComboPauseMenu::GetScalePercent(void) const
@@ -1097,7 +1076,6 @@ const TComboMenuItem *CComboPauseMenu::GetItems(unsigned *count) const
     {
         return combo_menu_settings_items_get(
             m_Language,
-            m_ProportionMode,
             m_ScalePercent,
             m_ScanlineMode,
             m_ColorArtifactsEnabled,
@@ -1813,22 +1791,6 @@ TComboMenuAction CComboPauseMenu::ProcessInput(boolean paused,
             }
             handled_settings_input = enter_edge || left_step || right_step;
         }
-        else if (items[m_Selected].action == ComboMenuActionCycleProportion)
-        {
-            if (left_step)
-            {
-                action = ComboMenuActionCycleProportionPrev;
-                m_ForceRedraw = TRUE;
-                m_ForceHighlightRedraw = FALSE;
-            }
-            else if (right_step || enter_edge)
-            {
-                action = ComboMenuActionCycleProportion;
-                m_ForceRedraw = TRUE;
-                m_ForceHighlightRedraw = FALSE;
-            }
-            handled_settings_input = enter_edge || left_step || right_step;
-        }
         else if ((items[m_Selected].action == ComboMenuActionToggleFmMusic)
               || (items[m_Selected].action == ComboMenuActionToggleColorArtifacts)
               || (items[m_Selected].action == ComboMenuActionToggleGfx9000)
@@ -2199,7 +2161,6 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
      && m_LastDrawnScaleMaxFitEnabled == m_ScaleMaxFitEnabled
      && m_LastDrawnMaxScalePercent == m_MaxScalePercent
      && m_LastDrawnLanguage == m_Language
-     && m_LastDrawnProportionMode == m_ProportionMode
      && m_LastDrawnScanlineMode == m_ScanlineMode
      && m_LastDrawnColorArtifactsEnabled == m_ColorArtifactsEnabled
      && m_LastDrawnGfx9000Enabled == m_Gfx9000Enabled
@@ -2501,7 +2462,6 @@ void CComboPauseMenu::Render(boolean visible, CGfxTextBoxRenderer *renderer, uns
     m_LastDrawnScaleMaxFitEnabled = m_ScaleMaxFitEnabled;
     m_LastDrawnMaxScalePercent = m_MaxScalePercent;
     m_LastDrawnLanguage = m_Language;
-    m_LastDrawnProportionMode = m_ProportionMode;
     m_LastDrawnScanlineMode = m_ScanlineMode;
     m_LastDrawnColorArtifactsEnabled = m_ColorArtifactsEnabled;
     m_LastDrawnGfx9000Enabled = m_Gfx9000Enabled;

@@ -17,10 +17,8 @@ public:
     void SetScaleMaxFitEnabled(boolean enabled);
     void SetMaxScalePercent(unsigned percent);
     void SetLanguage(unsigned language);
-    void SetProportionMode(unsigned mode);
     void SetColorArtifactsEnabled(boolean enabled);
     unsigned GetLanguage(void) const;
-    unsigned GetProportionMode(void) const;
     unsigned GetScalePercent(void) const;
     boolean IsScaleMaxFitEnabled(void) const;
     void SetScanlineMode(unsigned mode);
@@ -110,7 +108,6 @@ private:
     boolean m_ScaleMaxFitEnabled;
     unsigned m_MaxScalePercent;
     unsigned m_Language;
-    unsigned m_ProportionMode;
     unsigned m_ScanlineMode;
     boolean m_ColorArtifactsEnabled;
     boolean m_Gfx9000Enabled;
@@ -162,7 +159,6 @@ private:
     boolean m_LastDrawnScaleMaxFitEnabled;
     unsigned m_LastDrawnMaxScalePercent;
     unsigned m_LastDrawnLanguage;
-    unsigned m_LastDrawnProportionMode;
     unsigned m_LastDrawnScanlineMode;
     boolean m_LastDrawnColorArtifactsEnabled;
     boolean m_LastDrawnGfx9000Enabled;

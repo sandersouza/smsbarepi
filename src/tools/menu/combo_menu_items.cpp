@@ -357,7 +357,6 @@ const TComboMenuItem *combo_menu_load_cassette_items_get(unsigned language,
 }
 
 const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
-                                                     unsigned proportion_mode,
                                                      unsigned scale_percent,
                                                      unsigned scanline_mode,
                                                      boolean color_artifacts_enabled,
@@ -377,7 +376,6 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
 {
     static TComboMenuItem settings_items[32];
     static char language_label[32];
-    static char proportion_label[32];
     static char scale_label[32];
     static char scanline_label[32];
     static char color_artifacts_label[40];
@@ -394,7 +392,6 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     }
 
     language = combo_locale_clamp_language(language);
-    if (proportion_mode > 1u) proportion_mode = 0u;
     if (scanline_mode > 1u) scanline_mode = 1u;
     machine_profile = backend_machine_profile_clamp(machine_profile);
     processor_mode = MenuProcessorModeClamp(processor_mode);
@@ -409,8 +406,6 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     (void) scc_dual_cart_available;
 
     BuildLabelFlag(language_label, sizeof(language_label), locale->settings_language, combo_locale_language_code(language));
-    BuildLabelFlag(proportion_label, sizeof(proportion_label), locale->settings_proportion,
-                   proportion_mode == 0u ? locale->proportion_16_9 : locale->proportion_4_3);
     BuildLabelFlag(scale_label, sizeof(scale_label), locale->settings_scale, MenuScaleModeLabel(scale_percent));
     BuildLabelFlag(scanline_label, sizeof(scanline_label), locale->settings_scanlines,
                    scanline_mode == 0u ? locale->flag_off : locale->flag_on);
@@ -446,7 +441,6 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     const boolean show_color_artifacts = FALSE;
     ADD_SETTING_ITEM(language_label, ComboMenuActionCycleLanguage, ComboMenuRedrawMenuOnly, TRUE);
     ADD_SETTING_ITEM("", ComboMenuActionSeparator, ComboMenuRedrawMenuOnly, FALSE);
-    ADD_SETTING_ITEM(proportion_label, ComboMenuActionCycleProportion, ComboMenuRedrawMenuAndViewport, TRUE);
     if (show_scale)
     {
         ADD_SETTING_ITEM(scale_label, ComboMenuActionOverscanChanged, ComboMenuRedrawMenuAndViewport, TRUE);

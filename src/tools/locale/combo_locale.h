@@ -37,7 +37,6 @@ typedef struct {
     const char *load_cassette_empty;
     const char *load_cassette_unload_hint;
     const char *settings_language;
-    const char *settings_proportion;
     const char *settings_scale;
     const char *settings_scanlines;
     const char *settings_color_artifacts;
@@ -58,8 +57,6 @@ typedef struct {
     const char *flag_dual;
     const char *flag_none;
     const char *flag_na;
-    const char *proportion_16_9;
-    const char *proportion_4_3;
 } TComboLocaleStrings;
 
 unsigned combo_locale_clamp_language(unsigned language);

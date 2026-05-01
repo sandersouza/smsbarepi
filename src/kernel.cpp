@@ -391,12 +391,8 @@ static InterruptBindingBaseline g_InterruptBindingBaseline = {0, 0, FALSE, FALSE
 static const unsigned kBootModeGame = 2u;
 static const unsigned kRamMapperKbDefault = 512u;
 static const unsigned kMegaRamKbDefault = 0u;
-static const unsigned kProportionMode16_9 = 0u;
-static const unsigned kProportionMode4_3 = 1u;
-static const unsigned kProportion16_9Width = 960u;
-static const unsigned kProportion16_9Height = 540u;
-static const unsigned kProportion4_3Width = 640u;
-static const unsigned kProportion4_3Height = 480u;
+static const unsigned kFixedScreenWidth = 640u;
+static const unsigned kFixedScreenHeight = 480u;
 static const char kSettingsDrive[] = "SD:";
 static const char kSettingsPath[] = "SD:/sms.cfg";
 static const char kBootConfigPath[] = "SD:/config.txt";
@@ -1394,31 +1390,6 @@ static int KernelTextEqualsIgnoreCase(const char *a, const char *b)
 	return (a[i] == '\0' && b[i] == '\0') ? 1 : 0;
 }
 
-static const char *ProportionModeConfigValue(unsigned mode)
-{
-	return mode == kProportionMode4_3 ? "4:3" : "16:9";
-}
-
-static unsigned ClampProportionMode(unsigned mode)
-{
-	return mode == kProportionMode4_3 ? kProportionMode4_3 : kProportionMode16_9;
-}
-
-static unsigned ParseProportionModeValue(const char *value_start, const char *value_end, unsigned fallback)
-{
-	char value[16];
-	ParseTextValueLine(value_start, value_end, value, sizeof(value));
-	if (KernelTextEqualsIgnoreCase(value, "4:3") || KernelTextEqualsIgnoreCase(value, "4x3"))
-	{
-		return kProportionMode4_3;
-	}
-	if (KernelTextEqualsIgnoreCase(value, "16:9") || KernelTextEqualsIgnoreCase(value, "16x9"))
-	{
-		return kProportionMode16_9;
-	}
-	return ClampProportionMode(fallback);
-}
-
 static int KernelEndsWithIgnoreCase(const char *text, const char *suffix)
 {
 	if (text == 0 || suffix == 0)
@@ -1881,7 +1852,6 @@ CComboKernel::CComboKernel(void)
 	m_OverscanPercent(DefaultViewportScalePercent()),
 	m_ScaleMaxFitEnabled(FALSE),
 	m_Language(ComboLanguagePT),
-	m_ProportionMode(kProportionMode16_9),
 	m_ScanlineMode(kScanlineModeOff),
 	m_ColorArtifactsEnabled(TRUE),
 	m_Gfx9000Enabled(FALSE),
@@ -2409,11 +2379,10 @@ TComboShutdownMode CComboKernel::Run(void)
 	}
 	NormalizeSettingsForBuild();
 	BootPhase(m_Logger, "BT7", "Normalize settings... OK");
-	ApplyProportionModeToScreen("boot");
+	ApplyFixedScreenMode("boot");
 	if (m_BackendEnabled)
 	{
 		const boolean backend_has_machine = backend_runtime_is_capability_available(BACKEND_CAP_MACHINE);
-		const boolean backend_has_media = backend_runtime_is_capability_available(BACKEND_CAP_MEDIA);
 		if (!kBootQuiet)
 		{
 			BootTrace("R1");
@@ -2490,54 +2459,6 @@ TComboShutdownMode CComboKernel::Run(void)
 				m_EmulatorBackendName != 0 ? m_EmulatorBackendName : "backend");
 			m_Logger.Write(FromKernel, LogNotice, line);
 			BootPhase(m_Logger, "BT10", "emulator backend... OK");
-
-			/* Defensive restore exists only on the current media-capable path for now. */
-			if (backend_has_media)
-			{
-				boolean restored_cartridge = FALSE;
-				for (unsigned slot = 0u; slot < 2u; ++slot)
-				{
-					const char *persisted_path = backend_runtime_get_cartridge_path(slot);
-					if (persisted_path != 0 && persisted_path[0] != '\0')
-					{
-						if (backend_runtime_media_load_cartridge(slot, persisted_path))
-						{
-							CString restore_line;
-							restore_line.Format("Boot media restore: CART SLOT%u <= %s", slot + 1u, persisted_path);
-							m_Logger.Write(FromKernel, LogNotice, restore_line);
-							restored_cartridge = TRUE;
-						}
-						else
-						{
-							CString restore_line;
-							restore_line.Format("Boot media restore failed: CART SLOT%u <= %s", slot + 1u, persisted_path);
-							m_Logger.Write(FromKernel, LogWarning, restore_line);
-						}
-					}
-				}
-				if (restored_cartridge && !backend_runtime_reset())
-				{
-					m_Logger.Write(FromKernel, LogWarning, "Boot media restore failed: CART hard reset");
-				}
-				{
-					const char *persisted_path = backend_runtime_get_cassette_path();
-					if (persisted_path != 0 && persisted_path[0] != '\0')
-					{
-						if (backend_runtime_media_load_cassette(persisted_path))
-						{
-							CString restore_line;
-							restore_line.Format("Boot media restore: CAS TAPE <= %s", persisted_path);
-							m_Logger.Write(FromKernel, LogNotice, restore_line);
-						}
-						else
-						{
-							CString restore_line;
-							restore_line.Format("Boot media restore failed: CAS TAPE <= %s", persisted_path);
-							m_Logger.Write(FromKernel, LogWarning, restore_line);
-						}
-					}
-				}
-			}
 		}
 	}
 	InitializeDebugRuntime();
@@ -2570,7 +2491,6 @@ TComboShutdownMode CComboKernel::Run(void)
 	}
 	m_PauseMenu.SetScalePercent(m_OverscanPercent);
 	m_PauseMenu.SetLanguage(m_Language);
-	m_PauseMenu.SetProportionMode(m_ProportionMode);
 	m_PauseMenu.SetScanlineMode(m_ScanlineMode);
 	m_PauseMenu.SetColorArtifactsEnabled(m_ColorArtifactsEnabled);
 	m_PauseMenu.SetGfx9000Enabled(m_Gfx9000Enabled);
@@ -4807,13 +4727,10 @@ void CComboKernel::LoadSettingsFromStorage(void)
 		return;
 	}
 
-	boolean has_cfg_carta = FALSE;
 	boolean has_backend_id = FALSE;
 	boolean has_joy_map = FALSE;
-	char cfg_carta_path[192];
 	char cfg_backend_id[32];
 	u16 joy_map_codes[CUsbHidGamepad::MapSlotCount];
-	cfg_carta_path[0] = '\0';
 	cfg_backend_id[0] = '\0';
 	m_UsbGamepad.GetMappingCodes(joy_map_codes, CUsbHidGamepad::MapSlotCount);
 
@@ -4872,20 +4789,10 @@ void CComboKernel::LoadSettingsFromStorage(void)
 				{
 					m_Language = combo_locale_clamp_language(value);
 				}
-				else if (SettingsKeyEquals(line, key_len, "proportion"))
+				else if (SettingsKeyEquals(line, key_len, "proportion")
+				      || SettingsKeyEquals(line, key_len, "resolution"))
 				{
-					m_ProportionMode = ParseProportionModeValue(eq + 1, line_end, m_ProportionMode);
-				}
-				else if (SettingsKeyEquals(line, key_len, "resolution"))
-				{
-					if (value == 768u)
-					{
-						m_ProportionMode = kProportionMode4_3;
-					}
-					else if (value == 720u)
-					{
-						m_ProportionMode = kProportionMode16_9;
-					}
+					(void) value;
 				}
 					else if (SettingsKeyEquals(line, key_len, "scanline"))
 					{
@@ -4963,11 +4870,6 @@ void CComboKernel::LoadSettingsFromStorage(void)
 				joy_map_codes[CUsbHidGamepad::MapSlotButton2] = CUsbHidGamepad::ClampControlCode((u16) value);
 				has_joy_map = TRUE;
 			}
-			else if (SettingsKeyEquals(line, key_len, "cartridge_path"))
-			{
-				ParseTextValueLine(eq + 1, line_end, cfg_carta_path, sizeof(cfg_carta_path));
-				has_cfg_carta = TRUE;
-			}
 		}
 
 		line = line_end;
@@ -4985,7 +4887,6 @@ void CComboKernel::LoadSettingsFromStorage(void)
 	m_PauseMenu.SetScalePercent(m_OverscanPercent);
 	m_PauseMenu.SetScaleMaxFitEnabled(m_ScaleMaxFitEnabled);
 	m_PauseMenu.SetLanguage(m_Language);
-	m_PauseMenu.SetProportionMode(m_ProportionMode);
 	m_PauseMenu.SetScanlineMode(m_ScanlineMode);
 	m_PauseMenu.SetColorArtifactsEnabled(m_ColorArtifactsEnabled);
 	m_PauseMenu.SetGfx9000Enabled(m_Gfx9000Enabled);
@@ -5033,9 +4934,6 @@ void CComboKernel::LoadSettingsFromStorage(void)
 	backend_runtime_set_fm_music_enabled(m_FmMusicEnabled);
 	backend_runtime_set_fm_layer_gain_pct(m_FmLayerGainPct);
 	backend_runtime_set_scc_plus_enabled(FALSE);
-	if (has_cfg_carta) (void) backend_runtime_set_cartridge_path(0u, cfg_carta_path[0] ? cfg_carta_path : 0);
-	(void) backend_runtime_set_cartridge_path(1u, 0);
-	(void) backend_runtime_set_cassette_path(0);
 	(void) backend_runtime_set_scc_dual_cart_enabled(FALSE);
 	m_PauseMenu.SetSccDualCartState(FALSE, FALSE);
 
@@ -5092,7 +4990,6 @@ unsigned CComboKernel::BuildSettingsPayload(char *buffer, unsigned buffer_size)
 	} while (0)
 
 	APPEND_LINE_TEXT("backend_id", saved_backend_id);
-	APPEND_LINE_TEXT("proportion", ProportionModeConfigValue(m_ProportionMode));
 	APPEND_LINE_FMT("scale=%u\n", SaveViewportScaleSettingValue(
 		ViewportScaleSettingEnabled() ? m_OverscanPercent : DefaultViewportScalePercent()));
 	APPEND_LINE_FMT("language=%u\n", m_Language);
@@ -5113,7 +5010,6 @@ unsigned CComboKernel::BuildSettingsPayload(char *buffer, unsigned buffer_size)
 	}
 	APPEND_LINE_FMT("debugger=%u\n", ClampDebugOverlayMode(m_DebugOverlayMode));
 	APPEND_LINE_FMT("audio_gain=%u\n", m_AudioOutputGainPct > 100u ? 100u : m_AudioOutputGainPct);
-	APPEND_LINE_TEXT("cartridge_path", backend_runtime_get_cartridge_path(0u));
 
 #undef APPEND_LINE_FMT
 #undef APPEND_LINE_TEXT
@@ -5566,18 +5462,15 @@ void CComboKernel::HandleSettingsMenuClosed(void)
 	}
 }
 
-void CComboKernel::ApplyProportionModeToScreen(const char *source)
+void CComboKernel::ApplyFixedScreenMode(const char *source)
 {
-	m_ProportionMode = ClampProportionMode(m_ProportionMode);
 	if (!m_ScreenReady)
 	{
 		return;
 	}
 
-	const unsigned width =
-		(m_ProportionMode == kProportionMode4_3) ? kProportion4_3Width : kProportion16_9Width;
-	const unsigned height =
-		(m_ProportionMode == kProportionMode4_3) ? kProportion4_3Height : kProportion16_9Height;
+	const unsigned width = kFixedScreenWidth;
+	const unsigned height = kFixedScreenHeight;
 	if (m_Screen.GetWidth() == width && m_Screen.GetHeight() == height)
 	{
 		return;
@@ -5603,8 +5496,7 @@ void CComboKernel::ApplyProportionModeToScreen(const char *source)
 	ClearPresentationSurfaces();
 
 	CString line_log;
-	line_log.Format("Screen proportion %s => %ux%u%s%s",
-		ProportionModeConfigValue(m_ProportionMode),
+	line_log.Format("Screen fixed 4:3 => %ux%u%s%s",
 		width,
 		height,
 		source != 0 ? " source=" : "",
@@ -6090,20 +5982,6 @@ void CComboKernel::HandleMenuAction(TComboMenuAction action)
 			}
 			m_Logger.Write(FromKernel, LogNotice, line);
 		}
-		break;
-
-	case ComboMenuActionCycleProportion:
-		m_ProportionMode = (m_ProportionMode >= kProportionMode4_3) ? kProportionMode16_9 : (m_ProportionMode + 1u);
-		m_PauseMenu.SetProportionMode(m_ProportionMode);
-		ApplyProportionModeToScreen("menu");
-		RefreshSettingsUiAfterAction();
-		break;
-
-	case ComboMenuActionCycleProportionPrev:
-		m_ProportionMode = (m_ProportionMode == kProportionMode16_9) ? kProportionMode4_3 : (m_ProportionMode - 1u);
-		m_PauseMenu.SetProportionMode(m_ProportionMode);
-		ApplyProportionModeToScreen("menu");
-		RefreshSettingsUiAfterAction();
 		break;
 
 	case ComboMenuActionCycleLanguage:
@@ -6757,8 +6635,6 @@ void CComboKernel::UpdateJoystickFromRaw(unsigned char modifiers, const unsigned
 	}
 	const boolean video_affecting_action =
 		(menu_action == ComboMenuActionOverscanChanged)
-		|| (menu_action == ComboMenuActionCycleProportion)
-		|| (menu_action == ComboMenuActionCycleProportionPrev)
 		|| (menu_action == ComboMenuActionCycleScanlines)
 		|| (menu_action == ComboMenuActionCycleScanlinesPrev)
 		|| (menu_action == ComboMenuActionToggleColorArtifacts);

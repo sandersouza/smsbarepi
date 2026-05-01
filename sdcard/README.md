@@ -13,5 +13,5 @@ Arquivos esperados na particao FAT:
 - `sms/slot-last.sav` quando Save State for usado
 
 O `config.txt` deve apontar `kernel=sms.img` e `initramfs sms.cpio followkernel`.
-A proporcao de video e configurada em `sms.cfg` por `proportion=16:9` ou `proportion=4:3`;
-o runtime aplica essa escolha via framebuffer Circle, sem depender de `config.txt`.
+A proporcao de video do runtime SMS e fixa em 4:3 (`640x480`) via framebuffer Circle,
+sem depender de `sms.cfg` ou `config.txt`.

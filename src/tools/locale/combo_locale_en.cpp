@@ -28,7 +28,6 @@ extern const TComboLocaleStrings g_ComboLocaleEN = {
     "EMPTY",
     "[DEL] Eject Tape",
     "Language",
-    "Proportion",
     "Scale",
     "Scanline",
     "Color Artifacts",
@@ -48,7 +47,5 @@ extern const TComboLocaleStrings g_ComboLocaleEN = {
     "ON",
     "DUAL",
     "NONE",
-    "N/A",
-    "16:9",
-    "4:3"
+    "N/A"
 };

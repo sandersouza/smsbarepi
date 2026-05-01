@@ -20,7 +20,6 @@ static const char *sms_backend_basename(const char *path);
 
 static const char kSmsBackendFamilyId[] = "sms";
 static char g_sms_requested_backend_id[32];
-static char g_sms_cart_path[192];
 static char g_sms_cart_name[32];
 static unsigned g_sms_refresh_hz = 60u;
 static unsigned g_sms_load_diag = 0u;
@@ -409,7 +408,6 @@ static boolean sms_backend_load_default_bios(void)
     {
         return FALSE;
     }
-    g_sms_cart_path[0] = '\0';
     g_sms_cart_name[0] = '\0';
     g_sms_user_cartridge_loaded = FALSE;
     return TRUE;
@@ -608,7 +606,6 @@ boolean sms_backend_media_load_cartridge(unsigned slot_index, const char *path)
     }
     if (ok)
     {
-        sms_backend_copy_text(g_sms_cart_path, sizeof(g_sms_cart_path), path);
         sms_backend_copy_text(g_sms_cart_name, sizeof(g_sms_cart_name), sms_backend_basename(path));
         g_sms_user_cartridge_loaded = TRUE;
     }
@@ -717,22 +714,6 @@ const char *sms_backend_get_cartridge_name(unsigned slot_index)
 }
 const char *sms_backend_get_disk_name(unsigned drive_index) { (void) drive_index; return ""; }
 const char *sms_backend_get_cassette_name(void) { return ""; }
-const char *sms_backend_get_cartridge_path(unsigned slot_index)
-{
-    return (slot_index == 0u && g_sms_user_cartridge_loaded) ? g_sms_cart_path : "";
-}
-const char *sms_backend_get_disk_path(unsigned drive_index) { (void) drive_index; return ""; }
-const char *sms_backend_get_cassette_path(void) { return ""; }
-boolean sms_backend_set_cartridge_path(unsigned slot_index, const char *path)
-{
-    if (slot_index != 0u) return FALSE;
-    sms_backend_copy_text(g_sms_cart_path, sizeof(g_sms_cart_path), path);
-    sms_backend_copy_text(g_sms_cart_name, sizeof(g_sms_cart_name), sms_backend_basename(path));
-    g_sms_user_cartridge_loaded = (path != 0 && path[0] != '\0') ? TRUE : FALSE;
-    return TRUE;
-}
-boolean sms_backend_set_disk_path(unsigned drive_index, const char *path) { (void) drive_index; (void) path; return FALSE; }
-boolean sms_backend_set_cassette_path(const char *path) { (void) path; return FALSE; }
 boolean sms_backend_unload_cartridge(unsigned slot_index)
 {
     if (slot_index != 0u) return FALSE;
@@ -740,7 +721,6 @@ boolean sms_backend_unload_cartridge(unsigned slot_index)
     {
         return TRUE;
     }
-    g_sms_cart_path[0] = '\0';
     g_sms_cart_name[0] = '\0';
     g_sms_user_cartridge_loaded = FALSE;
     return sms_backend_reset();

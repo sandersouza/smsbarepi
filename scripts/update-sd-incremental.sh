@@ -231,7 +231,6 @@ ensure_settings_cfg() {
   mkdir -p "$(dirname "$SETTINGS_CFG")"
   cat > "$SETTINGS_CFG" <<'EOF'
 backend_id=sms.smsplus
-proportion=16:9
 scale=3
 language=1
 scanline=0
@@ -247,7 +246,6 @@ joy_map_button1=8192
 joy_map_button2=8193
 debugger=0
 audio_gain=100
-cartridge_path=
 #END
 EOF
 }

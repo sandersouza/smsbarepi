@@ -97,7 +97,7 @@ private:
     void CycleCoreSelection(boolean reverse);
     void HandleSettingsMenuClosed(void);
     boolean PersistSelectedCoreToBootConfig(void);
-    void ApplyProportionModeToScreen(const char *source);
+    void ApplyFixedScreenMode(const char *source);
     boolean InitializeSettingsStorage(void);
     boolean MountSettingsFileSystem(const char *phase);
     unsigned BuildSettingsPayload(char *buffer, unsigned buffer_size);
@@ -251,7 +251,6 @@ private:
     unsigned m_OverscanPercent;
     boolean m_ScaleMaxFitEnabled;
     unsigned m_Language;
-    unsigned m_ProportionMode;
     unsigned m_ScanlineMode;
     boolean m_ColorArtifactsEnabled;
     boolean m_Gfx9000Enabled;

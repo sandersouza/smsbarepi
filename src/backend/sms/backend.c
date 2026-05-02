@@ -15,6 +15,9 @@ extern unsigned long long smsbare_monotonic_time_us(void);
 extern boolean smsplus_media_load_cartridge_bytes(const char *label, const uint8_t *data, unsigned size);
 extern void smsplus_bare_set_fm_enabled(boolean enabled);
 extern void smsplus_bare_fill_audio_stats(SmsBackendAudioStats *stats);
+extern int get_save_state_size(void);
+extern int save_state_to_mem(void *stor);
+extern int load_state_from_mem(void *stor);
 
 static const char *sms_backend_basename(const char *path);
 
@@ -24,6 +27,7 @@ static char g_sms_cart_name[32];
 static unsigned g_sms_refresh_hz = 60u;
 static unsigned g_sms_load_diag = 0u;
 static boolean g_sms_audio_layer_muted[4] = { FALSE, TRUE, TRUE, TRUE };
+static boolean g_sms_fm_music_enabled = TRUE;
 static const unsigned char *g_sms_initramfs_default_rom = 0;
 static unsigned g_sms_initramfs_default_rom_size = 0u;
 static unsigned g_sms_initramfs_files = 0u;
@@ -645,16 +649,30 @@ boolean sms_backend_reboot_basic(void) { return sms_backend_reset(); }
 boolean sms_backend_menu_reset(void) { return sms_backend_reset(); }
 boolean sms_backend_save_state(void *dst, unsigned capacity, unsigned *saved_size)
 {
-    (void) dst;
-    (void) capacity;
-    if (saved_size != 0) *saved_size = 0u;
-    return FALSE;
+    const int state_size = get_save_state_size();
+    if (state_size <= 0)
+    {
+        if (saved_size != 0) *saved_size = 0u;
+        return FALSE;
+    }
+    if (saved_size != 0)
+    {
+        *saved_size = (unsigned) state_size;
+    }
+    if (dst == 0 || capacity < (unsigned) state_size)
+    {
+        return FALSE;
+    }
+    return save_state_to_mem(dst) != 0 ? TRUE : FALSE;
 }
 boolean sms_backend_load_state(const void *src, unsigned size)
 {
-    (void) src;
-    (void) size;
-    return FALSE;
+    const int state_size = get_save_state_size();
+    if (src == 0 || state_size <= 0 || size != (unsigned) state_size)
+    {
+        return FALSE;
+    }
+    return load_state_from_mem((void *) src) != 0 ? TRUE : FALSE;
 }
 
 void sms_backend_set_overscan(boolean enabled) { (void) enabled; }
@@ -684,10 +702,10 @@ void sms_backend_set_z80_turbo_mode(unsigned mode) { (void) mode; }
 unsigned sms_backend_get_z80_turbo_mode(void) { return 0u; }
 void sms_backend_set_fm_music_enabled(boolean enabled)
 {
-    (void) enabled;
-    smsplus_bare_set_fm_enabled(TRUE);
+    g_sms_fm_music_enabled = enabled ? TRUE : FALSE;
+    smsplus_bare_set_fm_enabled(g_sms_fm_music_enabled);
 }
-boolean sms_backend_get_fm_music_enabled(void) { return TRUE; }
+boolean sms_backend_get_fm_music_enabled(void) { return g_sms_fm_music_enabled; }
 void sms_backend_set_scc_plus_enabled(boolean enabled) { (void) enabled; }
 boolean sms_backend_get_scc_plus_enabled(void) { return FALSE; }
 boolean sms_backend_set_scc_dual_cart_enabled(boolean enabled) { (void) enabled; return FALSE; }

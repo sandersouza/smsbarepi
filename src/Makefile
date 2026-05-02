@@ -47,6 +47,8 @@ LOCAL_INCLUDE_DIRS := \
 INCLUDE += $(SMSPLUS_INCLUDE_DIRS) $(LOCAL_INCLUDE_DIRS)
 CFLAGS += -w
 CXXFLAGS += -w
+SMSPLUS_WRAP_LDFLAGS := --wrap=fmunit_detect_r --wrap=fmunit_detect_w --wrap=smsj_port_r
+LDFLAGS += $(SMSPLUS_WRAP_LDFLAGS)
 
 ifeq ($(SMSBARE_SIZE_OPT),1)
 OPTIMIZE := -Os
@@ -95,6 +97,7 @@ SMSPLUS_UPSTREAM_OBJS = \
 
 SMSPLUS_LOCAL_OBJS = \
 	$(SMSPLUS_MODULE_DIR)/smsplus_bare_psg.o \
+	$(SMSPLUS_MODULE_DIR)/smsplus_bare_state.o \
 	$(SMSPLUS_MODULE_DIR)/smsplus_math_shim.o
 
 SMS_RUNTIME_OBJS = \
@@ -141,6 +144,6 @@ $(CIRCLEHOME)/addon/fatfs/libfatfs.a:
 
 backend-module: $(BACKEND_MODULE_SMS_OBJS)
 	@mkdir -p ../artifacts/backend/sms
-	$(LD) -r -o ../artifacts/backend/sms/sms.smsplus.mod.elf $(BACKEND_MODULE_SMS_OBJS)
+	$(LD) -r $(SMSPLUS_WRAP_LDFLAGS) -o ../artifacts/backend/sms/sms.smsplus.mod.elf $(BACKEND_MODULE_SMS_OBJS)
 
 -include $(DEPS)

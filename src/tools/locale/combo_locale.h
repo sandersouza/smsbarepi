@@ -43,6 +43,7 @@ typedef struct {
     const char *settings_core;
     const char *settings_machine;
     const char *settings_processor;
+    const char *settings_fm_sound;
     const char *settings_autofire;
     const char *settings_joystick_map;
     const char *settings_audio_gain;

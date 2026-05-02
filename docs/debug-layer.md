@@ -8,6 +8,7 @@ Guia operacional da layer de debug HDMI/UART do SMSBarePI.
 - O identificador visual canonico continua sendo `TXTDBG BUILD:XXXX`.
 - O backend default exibido e `sms.smsplus`.
 - Parte da telemetria generica ainda usa campos herdados do framework BarePI e pode retornar zero enquanto a instrumentacao SMS dedicada nao for criada.
+- A UART inicial (`BT0`) fica ativa cedo, antes de `screen` e `audio`, para rastrear travamentos de boot sem depender do overlay.
 - Os logs periodicos UART `SMSAUD` do audio SMS foram removidos apos a correcao do PSG. UART continua disponivel para reinstrumentacao pontual quando o overlay HDMI nao for suficiente.
 
 ## Regras

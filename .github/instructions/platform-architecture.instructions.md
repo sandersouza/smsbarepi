@@ -20,6 +20,7 @@ applyTo:
 
 ## Boot oficial
 
+- `BT0`: UART/logger minimo em polling para rastrear falhas antes de `screen` e `audio`
 - `BT1`: `Interrupt + Timer`
 - `BT2`: `screen`
 - `BT3`: `audio`
@@ -30,7 +31,7 @@ applyTo:
 - `BT8`: `initramfs` `boot-minimal`
 - `BT9`: aplicacao da config no runtime
 - `BT10`: `emulator backend`
-- `BT11`: `UART + Logger` somente em `DEBUG=1`
+- `BT11`: anexar UART ao runtime de debug quando `DEBUG=1`
 - `BT12`: debug overlay pronto somente em `DEBUG=1`
 - Primeiro blit visivel do backend antes do `USB Host`
 - `BT13`: `USB Host`
@@ -40,7 +41,7 @@ applyTo:
 
 - Priorizar `screen` e `audio` antes do backend.
 - Montar FatFs antes do backend e carregar configuracao diretamente do SD.
-- Em `DEBUG=1`, inicializar UART/logger e overlay somente apos o backend.
+- Inicializar UART/logger minimo antes de `screen` e `audio`; em `DEBUG=1`, anexar runtime UART detalhado e overlay apos o backend.
 - Fazer o primeiro blit visivel antes de inicializar `USB Host`.
 - Adiar initramfs restante, mount FatFs de rotina e tarefas nao criticas para o loop principal.
 

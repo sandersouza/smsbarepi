@@ -166,6 +166,7 @@ private:
     unsigned m_BootToneFramesRemaining;
     unsigned m_UsbInitRetryTick;
     boolean m_AudioInitAttempted;
+    boolean m_UartReady;
     boolean m_UsbReady;
     u8 m_JoyBridgeBits;
     u8 m_JoyMappedBits;

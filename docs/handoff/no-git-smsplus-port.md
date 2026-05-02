@@ -1,6 +1,6 @@
 # Handoff: SMS Plus GX Port
 
-Data: 2026-04-26
+Data: 2026-05-01
 
 ## Estado
 
@@ -18,7 +18,9 @@ Data: 2026-04-26
 - Sem cartucho carregado, o backend carrega `bios.sms` do initramfs como BIOS default.
 - Viewport SMS usa framebuffer Circle dinamico. `Overscan OFF` e o default e usa framebuffer `2.25x` (`256x192` -> `576x432`) com o viewport do emulador em escala exata `2x` centralizada. `Overscan ON` usa framebuffer `2x` da area ativa (`256x192` -> `512x384`). O Settings nao exibe `Scale` nem `Proportion`.
 - Audio HDMI usa o pipeline upstream de geracao do SMS Plus GX para `sound.c`, `fmintf.c`, `emu2413.c` e `ym2413.c`. O SN76489 foi substituido no link por `src/backend/sms/modules/smsplus/smsplus_bare_psg.c`, preservando a API/contexto do SMS Plus GX e removendo `third_party/smsplus/sound/sn76489.o` dos objetos SMS sem alterar `third_party`.
-- A ponte BarePI permanece no baseline de mix que estava mais proximo do correto: soma PSG+FM com ganho fixo 16x, clipping 16-bit, `BoostNoise` preservado, ganho final SMS em 100%, auto-gain do kernel desativado para SMS e ring buffer mono antes do HDMI.
+- A ponte BarePI permanece no baseline de mix que estava mais proximo do correto: soma PSG+FM com ganho fixo 16x, clipping 16-bit, `BoostNoise` preservado, ganho final SMS em 100%, auto-gain do kernel desativado para SMS e ring buffer mono antes da saida Circle.
+- A saida Circle e selecionada por `SD:/cmdline.txt`: `sounddev=sndpwm` usa A/V analogico PWM (`CPWMSoundBaseDevice`); `sounddev=sndhdmi` ou `sounddev=sndvchiq soundopt=2` forca HDMI (`CHDMISoundBaseDevice`); `sounddev=sndvchiq` com `soundopt=0` fica em modo auto e cai para A/V PWM quando HDMI nao tem audio. `Settings -> Audio Gain` e aplicado antes de escrever na fila Circle, entao afeta a saida selecionada.
+- A UART/logger minimo inicia em `BT0`, antes de `screen` e `audio`, para capturar falhas de boot no driver de audio. Em `DEBUG=1`, `BT11` apenas anexa o runtime UART detalhado/overlay ao canal ja ativo.
 - FM/YM2413 fica controlado por `Settings -> FM Sound [ON/OFF]`, persistido como `fm_music=0|1` em `SD:/sms.cfg`. `ON` configura o core como SMS japones/domestic antes de `system_init/system_reinit` para expor as portas Mark III/SMSJ `0xF0/0xF1/0xF2`; `OFF` volta ao mapa SMS sem FM e remove a camada FM do mix. O latch de deteccao `0xF2` e adaptado localmente via `--wrap=fmunit_detect_*`/`--wrap=smsj_port_r`, retornando apenas bit 0 tambem durante a janela de deteccao com I/O chip desabilitado, para compatibilidade com jogos como Bomber Raid.
 - Logs periodicos UART de audio SMS com prefixo `SMSAUD` foram removidos. O audio permanece observavel pelo comportamento em hardware e pela telemetria agregada ja existente do backend; reinstrumentar UART apenas em nova investigacao pontual.
 - Buffer de ROM limitado a 1 MB para manter o footprint dentro da janela atual do kernel.
@@ -43,13 +45,14 @@ make -j4 DEBUG=0
 make -n sdcard
 # 2026-04-30: make -j4 DEBUG=1 apos correcao de Joypad Mapping
 # 2026-04-30: matriz completa apos framebuffer 2x dinamico e remocao de Scale
+# 2026-05-01: scripts/check-third-party-pristine.sh, git diff --check e make -j4 DEBUG=1 apos selecao HDMI/A-V por sounddev e UART BT0
 ```
 
 Resultado atual:
 
 - `artifacts/kernel8-default.img`
 - `build/src/sms.img`
-- Ultima build local: `BUILD_BID=202605011231-d9fab11`, `TXTDBG BUILD:E2D2`, SHA1 `174290c81f7142e658a1546a658bfabc129d3b32` (`DEBUG=0`).
+- Ultima build local: `BUILD_BID=202605012219-5477e75`, `TXTDBG BUILD:3C6B`, SHA1 `ed27d57d76b36bd9ec22824cbbc1a5cce3a46c8d` (`DEBUG=1`).
 
 ## Pendencias
 

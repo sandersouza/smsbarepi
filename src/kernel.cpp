@@ -7,6 +7,7 @@
 #include <circle/bcmpropertytags.h>
 #include <circle/machineinfo.h>
 #include <circle/sound/hdmisoundbasedevice.h>
+#include <circle/sound/pwmsoundbasedevice.h>
 #include <circle/startup.h>
 #include <circle/string.h>
 #include <circle/synchronize.h>
@@ -1556,6 +1557,7 @@ CComboKernel::CComboKernel(void)
 	m_BootToneFramesRemaining(0),
 	m_UsbInitRetryTick(0u),
 	m_AudioInitAttempted(FALSE),
+	m_UartReady(FALSE),
 	m_UsbReady(FALSE),
 	m_JoyBridgeBits(0),
 	m_JoyMappedBits(ComboKeyboardJoyMask()),
@@ -1926,9 +1928,15 @@ boolean CComboKernel::Initialize(void)
 {
 	boolean ok = TRUE;
 
+	m_UartReady = m_Serial.Initialize(115200);
 	if (ok)
 	{
-		ok = m_Logger.Initialize(&m_NullLog);
+		ok = m_Logger.Initialize(m_UartReady ? (CDevice *) &m_Serial : (CDevice *) &m_NullLog);
+		if (m_UartReady)
+		{
+			BootPhase(m_Logger, "BT0", "UART early... OK");
+			m_Logger.Write(FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+		}
 	}
 
 	if (ok) ok = m_Interrupt.Initialize();
@@ -2007,17 +2015,20 @@ void CComboKernel::InitializeDebugRuntime(void)
 		return;
 	}
 
-	if (!m_Serial.Initialize(115200))
+	if (!m_UartReady && !m_Serial.Initialize(115200))
 	{
 		BootPhaseWarn(m_Logger, "BT11", "UART + Logger... FAIL");
 		return;
 	}
+	m_UartReady = TRUE;
 
 	g_backend_uart_trace_serial = &m_Serial;
 	FlushBackendUartTraceBuffer();
-	(void) m_Logger.Initialize(&m_Serial);
+	if (m_Logger.GetTarget() != &m_Serial)
+	{
+		m_Logger.SetNewTarget(&m_Serial);
+	}
 	BootPhase(m_Logger, "BT11", "UART + Logger... OK");
-	m_Logger.Write(FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 	m_Logger.Write(FromKernel, LogNotice, "SMSBarePI: HDMI audio + USB keyboard");
 	{
 		CString mem_line;
@@ -2977,32 +2988,68 @@ TComboShutdownMode CComboKernel::Run(void)
 void CComboKernel::InitializeAudioOutput(boolean backend_audio_enabled)
 {
 	m_AudioInitAttempted = TRUE;
-	m_Sound = new CHDMISoundBaseDevice(&m_Interrupt, kSampleRate, kChunkSize);
-	if (m_Sound == 0)
+	const char *sound_device = m_Options.GetSoundDevice();
+	const unsigned sound_option = m_Options.GetSoundOption();
+	const boolean force_av_pwm = strcmp(sound_device, "sndpwm") == 0
+		|| (strcmp(sound_device, "sndvchiq") == 0 && sound_option == 1u)
+		? TRUE : FALSE;
+	const boolean force_hdmi = strcmp(sound_device, "sndhdmi") == 0
+		|| (strcmp(sound_device, "sndvchiq") == 0 && sound_option == 2u)
+		? TRUE : FALSE;
+	const boolean allow_av_fallback = force_hdmi ? FALSE : TRUE;
+	boolean use_av_pwm = force_av_pwm;
+	boolean started = FALSE;
+
+	for (unsigned attempt = 0u; attempt < 2u && !started; ++attempt)
 	{
-		m_Logger.Write(FromKernel, LogPanic, "Failed to allocate CHDMISoundBaseDevice");
-		return;
+		m_Sound = use_av_pwm
+			? (CSoundBaseDevice *) new CPWMSoundBaseDevice(&m_Interrupt, kSampleRate, kChunkSize)
+			: (CSoundBaseDevice *) new CHDMISoundBaseDevice(&m_Interrupt, kSampleRate, kChunkSize);
+		if (m_Sound == 0)
+		{
+			m_Logger.Write(FromKernel, LogWarning,
+				use_av_pwm ? "Failed to allocate A/V sound device" : "Failed to allocate HDMI sound device");
+		}
+		else if (!m_Sound->AllocateQueue(kQueueMs))
+		{
+			m_Logger.Write(FromKernel, LogWarning,
+				use_av_pwm ? "Cannot allocate A/V sound queue" : "Cannot allocate HDMI sound queue");
+		}
+		else
+		{
+			m_Sound->SetWriteFormat(SoundFormatSigned16, 2);
+			RefillAudioQueue();
+
+			m_SoundStartAttempts++;
+			if (m_Sound->Start())
+			{
+				started = TRUE;
+				break;
+			}
+			m_SoundStartFailures++;
+			m_Logger.Write(FromKernel, LogWarning,
+				use_av_pwm ? "Cannot start A/V sound" : "Cannot start HDMI sound");
+		}
+
+		delete m_Sound;
+		m_Sound = 0;
+		if (use_av_pwm || !allow_av_fallback)
+		{
+			break;
+		}
+		use_av_pwm = TRUE;
+		m_Logger.Write(FromKernel, LogWarning, "Audio fallback: HDMI unavailable, trying A/V PWM");
 	}
 
-	if (!m_Sound->AllocateQueue(kQueueMs))
+	if (!started)
 	{
-		m_Logger.Write(FromKernel, LogPanic, "Cannot allocate sound queue");
-		return;
-	}
-
-	m_Sound->SetWriteFormat(SoundFormatSigned16, 2);
-	RefillAudioQueue();
-
-	m_SoundStartAttempts++;
-	if (!m_Sound->Start())
-	{
-		m_SoundStartFailures++;
-		m_Logger.Write(FromKernel, LogPanic, "Cannot start HDMI sound");
+		m_Logger.Write(FromKernel, LogPanic, "Cannot start any audio output");
 	}
 
 	if (m_TestToneEnabled)
 	{
-		m_Logger.Write(FromKernel, LogNotice, "Test tone ON (440Hz HDMI)");
+		m_Logger.Write(FromKernel, LogNotice,
+			use_av_pwm ? "Test tone ON (440Hz A/V)" : "Test tone ON (440Hz HDMI)");
 	}
 	else if (backend_audio_enabled)
 	{
@@ -3013,7 +3060,8 @@ void CComboKernel::InitializeAudioOutput(boolean backend_audio_enabled)
 			tone_line.Format("Boot probe tone: %ums", SMSBARE_AUDIO_BOOT_TONE_MS);
 			m_Logger.Write(FromKernel, LogNotice, tone_line);
 		}
-		m_Logger.Write(FromKernel, LogNotice, "Emulator audio ON (HDMI)");
+		m_Logger.Write(FromKernel, LogNotice,
+			use_av_pwm ? "Emulator audio ON (A/V)" : "Emulator audio ON (HDMI)");
 	}
 }
 

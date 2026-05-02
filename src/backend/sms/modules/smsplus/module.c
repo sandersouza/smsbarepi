@@ -29,27 +29,29 @@ extern void smsplus_bare_sound_configure(void);
 extern void smsplus_bare_audio_frame_ready(void);
 extern void smsplus_bare_audio_reset_buffer(void);
 
-static void smsplus_apply_fm_setting(void)
+static void smsplus_apply_fm_setting(boolean enabled)
 {
-    sms.use_fm = 1;
-    sms.console = CONSOLE_SMSJ;
-    sms.territory = TERRITORY_DOMESTIC;
+    sms.use_fm = enabled ? 1 : 0;
+    sms.console = enabled ? CONSOLE_SMSJ : CONSOLE_SMS;
+    sms.territory = enabled ? TERRITORY_DOMESTIC : TERRITORY_EXPORT;
     sms.display = DISPLAY_NTSC;
 }
 
 static void smsplus_apply_configured_fm(void)
 {
-    smsplus_apply_fm_setting();
+    smsplus_apply_fm_setting(sms_backend_get_fm_music_enabled());
 }
 
 void smsplus_bare_set_fm_enabled(boolean enabled)
 {
-    (void) enabled;
+    enabled = enabled ? TRUE : FALSE;
+    const uint8 desired_console = enabled ? CONSOLE_SMSJ : CONSOLE_SMS;
+    const uint8 desired_territory = enabled ? TERRITORY_DOMESTIC : TERRITORY_EXPORT;
     const boolean changed =
-        (sms.use_fm == 0)
-        || (sms.console != CONSOLE_SMSJ)
-        || (sms.territory != TERRITORY_DOMESTIC);
-    smsplus_apply_fm_setting();
+        ((sms.use_fm != 0) != enabled)
+        || (sms.console != desired_console)
+        || (sms.territory != desired_territory);
+    smsplus_apply_fm_setting(enabled);
     if (g_smsplus_core_initialized && changed)
     {
         smsplus_bare_audio_reset_buffer();

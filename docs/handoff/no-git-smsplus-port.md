@@ -14,12 +14,12 @@ Data: 2026-04-26
 - O primeiro corte usa framebuffer interno indexado 8bpp do SMS Plus GX e converte para RGB565 antes do blit BarePI.
 - ROM loader implementado por FatFs em `SD:/sms/roms`, aceitando apenas `.sms`; no menu SMS o item `Load CART` abre direto o navegador e carrega sempre no slot unico do SMS.
 - `roms/initramfs/bios.sms` e a ROM default de boot via `sms.cpio`; quando nenhum cartucho foi carregado, o backend roda a BIOS.
-- Save/Load State usa `SD:/sms/slot-last.sav`.
+- Save/Load State usa `SD:/sms/slot-last.sav` e serializa o estado em memoria pela ponte local `smsplus_bare_state.c`.
 - Sem cartucho carregado, o backend carrega `bios.sms` do initramfs como BIOS default.
 - Viewport SMS usa framebuffer Circle dinamico. `Overscan OFF` e o default e usa framebuffer `2.25x` (`256x192` -> `576x432`) com o viewport do emulador em escala exata `2x` centralizada. `Overscan ON` usa framebuffer `2x` da area ativa (`256x192` -> `512x384`). O Settings nao exibe `Scale` nem `Proportion`.
 - Audio HDMI usa o pipeline upstream de geracao do SMS Plus GX para `sound.c`, `fmintf.c`, `emu2413.c` e `ym2413.c`. O SN76489 foi substituido no link por `src/backend/sms/modules/smsplus/smsplus_bare_psg.c`, preservando a API/contexto do SMS Plus GX e removendo `third_party/smsplus/sound/sn76489.o` dos objetos SMS sem alterar `third_party`.
 - A ponte BarePI permanece no baseline de mix que estava mais proximo do correto: soma PSG+FM com ganho fixo 16x, clipping 16-bit, `BoostNoise` preservado, ganho final SMS em 100%, auto-gain do kernel desativado para SMS e ring buffer mono antes do HDMI.
-- FM/YM2413 fica sempre ativo no backend SMS, configurando o core como SMS japones/domestic. O Settings SMS nao exibe mais `FM Audio`, e o build SMS nao salva nem aplica `fm_audio`/`fm_music` de configuracoes antigas.
+- FM/YM2413 fica controlado por `Settings -> FM Sound [ON/OFF]`, persistido como `fm_music=0|1` em `SD:/sms.cfg`. `ON` configura o core como SMS japones/domestic antes de `system_init/system_reinit` para expor as portas Mark III/SMSJ `0xF0/0xF1/0xF2`; `OFF` volta ao mapa SMS sem FM e remove a camada FM do mix. O latch de deteccao `0xF2` e adaptado localmente via `--wrap=fmunit_detect_*`/`--wrap=smsj_port_r`, retornando apenas bit 0 tambem durante a janela de deteccao com I/O chip desabilitado, para compatibilidade com jogos como Bomber Raid.
 - Logs periodicos UART de audio SMS com prefixo `SMSAUD` foram removidos. O audio permanece observavel pelo comportamento em hardware e pela telemetria agregada ja existente do backend; reinstrumentar UART apenas em nova investigacao pontual.
 - Buffer de ROM limitado a 1 MB para manter o footprint dentro da janela atual do kernel.
 - `sms.cfg` agora e lido/gravado somente via FatFs em `SD:/sms.cfg`; o espelho raw foi removido. Escala e proporcao nao sao configuraveis: `scale=`, `scale_max=`, `proportion=` e `resolution=` de configs antigas sao ignorados. `overscan=0|1` controla apenas o padding do framebuffer, e o kernel aplica `CComboScreenDevice::Resize()` sem ler nem gravar `SD:/config.txt`.
@@ -49,10 +49,10 @@ Resultado atual:
 
 - `artifacts/kernel8-default.img`
 - `build/src/sms.img`
-- Ultima build local: `BUILD_BID=202604302332-11ed60d`, `TXTDBG BUILD:17BE`, SHA1 `91c2bf5f23ed1e6fae7c97ac71fa8f2ec98d5f92` (`DEBUG=0`).
+- Ultima build local: `BUILD_BID=202605011231-d9fab11`, `TXTDBG BUILD:E2D2`, SHA1 `174290c81f7142e658a1546a658bfabc129d3b32` (`DEBUG=0`).
 
 ## Pendencias
 
 - Validar em hardware Raspberry Pi 3B.
 - Testar `Load CART` com ROM real em `SD:/sms/roms`.
-- Validar em hardware Raspberry Pi 3B o audio da BIOS EU REV1/SEGA logo e `SHINOBI.SMS` com FM sempre ativo.
+- Validar em hardware Raspberry Pi 3B o audio da BIOS EU REV1/SEGA logo e jogos com FM, alternando `Settings -> FM Sound` entre `ON` e `OFF`.

@@ -244,6 +244,7 @@ joy_map_left=16384
 joy_map_right=20480
 joy_map_button1=8192
 joy_map_button2=8193
+fm_music=1
 debugger=0
 audio_gain=100
 #END

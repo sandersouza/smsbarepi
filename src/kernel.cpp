@@ -1887,7 +1887,7 @@ void CComboKernel::NormalizeSettingsForBuild(void)
 
 	m_DiskRomEnabled = FALSE;
 	m_MegaRamKb = 0u;
-	m_FmMusicEnabled = TRUE;
+	m_FmMusicEnabled = m_FmMusicEnabled ? TRUE : FALSE;
 	m_SccCartEnabled = FALSE;
 	m_SccDualCartEnabled = FALSE;
 
@@ -4542,6 +4542,12 @@ void CComboKernel::LoadSettingsFromStorage(void)
 				{
 					m_ProcessorMode = ClampProcessorMode(value);
 				}
+				else if (SettingsKeyEquals(line, key_len, "fm_music")
+				      || SettingsKeyEquals(line, key_len, "fm_audio")
+				      || SettingsKeyEquals(line, key_len, "fm_sound"))
+				{
+					m_FmMusicEnabled = value ? TRUE : FALSE;
+				}
 				else if (SettingsKeyEquals(line, key_len, "autofire"))
 				{
 					m_AutofireEnabled = value ? TRUE : FALSE;
@@ -4717,6 +4723,7 @@ unsigned CComboKernel::BuildSettingsPayload(char *buffer, unsigned buffer_size)
 	APPEND_LINE_FMT("color_artifacts=%u\n", m_ColorArtifactsEnabled ? 1u : 0u);
 	APPEND_LINE_FMT("machine=%u\n", m_MachineProfile);
 	APPEND_LINE_FMT("processor=%u\n", m_ProcessorMode);
+	APPEND_LINE_FMT("fm_music=%u\n", m_FmMusicEnabled ? 1u : 0u);
 	APPEND_LINE_FMT("autofire=%u\n", m_AutofireEnabled ? 1u : 0u);
 	APPEND_LINE_FMT("rammapper_kb=%u\n", m_RamMapperKb);
 	{
@@ -5896,10 +5903,12 @@ void CComboKernel::HandleMenuAction(TComboMenuAction action)
 		break;
 
 	case ComboMenuActionToggleFmMusic:
-		m_FmMusicEnabled = TRUE;
-		m_PauseMenu.SetFmMusicEnabled(TRUE);
+		m_FmMusicEnabled = m_FmMusicEnabled ? FALSE : TRUE;
+		m_PauseMenu.SetFmMusicEnabled(m_FmMusicEnabled);
 		RefreshSettingsUiAfterAction();
-		backend_runtime_set_fm_music_enabled(TRUE);
+		backend_runtime_set_fm_music_enabled(m_FmMusicEnabled);
+		m_Logger.Write(FromKernel, LogNotice,
+			m_FmMusicEnabled ? "Settings: FM Sound ON" : "Settings: FM Sound OFF");
 		break;
 
 	case ComboMenuActionSaveState:

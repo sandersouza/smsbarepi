@@ -42,6 +42,31 @@ void error(char *format, ...)
     (void) format;
 }
 
+int __wrap_fmunit_detect_r(void)
+{
+    if (!sms_backend_get_fm_music_enabled() || !sms.use_fm)
+    {
+        return 0xFF;
+    }
+    return sms.fm_detect & 0x01;
+}
+
+void __wrap_fmunit_detect_w(int data)
+{
+    sms.fm_detect = (uint8) (data & 0x01);
+}
+
+extern uint8 __real_smsj_port_r(uint16 port);
+
+uint8 __wrap_smsj_port_r(uint16 port)
+{
+    if (((port & 0xFF) == 0xF2) && ((sms.memctrl & 4) != 0))
+    {
+        return (uint8) __wrap_fmunit_detect_r();
+    }
+    return __real_smsj_port_r(port);
+}
+
 static unsigned smsbare_abs_i32(int value)
 {
     return value < 0 ? (unsigned) (-value) : (unsigned) value;

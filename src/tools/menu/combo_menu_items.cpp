@@ -360,6 +360,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     static char core_label[32];
     static char machine_label[32];
     static char processor_label[32];
+    static char fm_sound_label[32];
     static char autofire_label[32];
     static char joypad_mapping_label[40];
     static char audio_gain_label[32];
@@ -379,7 +380,6 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     (void) disk_rom_enabled;
     (void) rammapper_kb;
     (void) megaram_kb;
-    (void) fm_music_enabled;
     (void) scc_cart_enabled;
     (void) scc_dual_cart_enabled;
     (void) scc_dual_cart_available;
@@ -397,6 +397,8 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
                    backend_machine_profile_label(machine_profile));
     BuildLabelFlag(processor_label, sizeof(processor_label), locale->settings_processor,
                    MenuProcessorModeLabel(processor_mode));
+    BuildLabelFlag(fm_sound_label, sizeof(fm_sound_label), locale->settings_fm_sound,
+                   fm_music_enabled ? locale->flag_on : locale->flag_off);
     BuildLabelFlag(autofire_label, sizeof(autofire_label), locale->settings_autofire,
                    autofire_enabled ? locale->flag_on : locale->flag_off);
     BuildLabelFlag(joypad_mapping_label, sizeof(joypad_mapping_label), locale->settings_joystick_map, "->");
@@ -440,6 +442,7 @@ const TComboMenuItem *combo_menu_settings_items_get(unsigned language,
     {
         ADD_SETTING_ITEM(processor_label, ComboMenuActionCycleProcessor, ComboMenuRedrawMenuOnly, TRUE);
     }
+    ADD_SETTING_ITEM(fm_sound_label, ComboMenuActionToggleFmMusic, ComboMenuRedrawMenuOnly, TRUE);
     ADD_SETTING_ITEM(autofire_label, ComboMenuActionToggleAutofire, ComboMenuRedrawMenuOnly, TRUE);
     ADD_SETTING_ITEM(joypad_mapping_label, ComboMenuActionOpenJoystickMap, ComboMenuRedrawMenuOnly, TRUE);
 
